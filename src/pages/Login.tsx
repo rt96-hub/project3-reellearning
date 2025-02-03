@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, Mail, Phone } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -10,6 +11,7 @@ const Login = () => {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +81,7 @@ const Login = () => {
               type="button"
               variant="outline"
               className="w-full h-12 text-base"
+              onClick={() => navigate("/signup")}
             >
               Create account
             </Button>
