@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/video_action_buttons.dart';
 
@@ -17,6 +18,25 @@ class _HomeScreenState extends State<HomeScreen> {
     "This is an amazing video showing the beautiful sunset at the beach. "
     "The waves are crashing against the shore while seagulls fly overhead, "
     "creating a perfect moment of peace and tranquility.";
+
+  void _onTabTapped(int index) {
+    setState(() => _currentIndex = index);
+    
+    switch (index) {
+      case 0:
+        context.go('/home');
+        break;
+      case 1:
+        // TODO: Navigate to messages
+        break;
+      case 2:
+        // TODO: Navigate to classes
+        break;
+      case 3:
+        context.go('/profile');
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,11 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
             right: 0,
             child: BottomNavBar(
               currentIndex: _currentIndex,
-              onTap: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
-              },
+              onTap: _onTabTapped,
             ),
           ),
         ],

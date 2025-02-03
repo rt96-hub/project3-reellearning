@@ -1,14 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:reellearning_fe/src/features/auth/presentation/screens/login_screen.dart';
-import 'package:reellearning_fe/src/features/auth/presentation/screens/signup_screen.dart';
-import 'package:reellearning_fe/src/features/home/presentation/screens/home_screen.dart';
+import '../../features/auth/data/providers/auth_provider.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/signup_screen.dart';
+import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/home/presentation/screens/profile_screen.dart';
 
 // TODO: Implement router configuration
-class AppRouter {
-  static final GoRouter router = GoRouter(
-    // need to make initial location be the home page, but if user is not logged in, it should redirect to the login page
+final routerProvider = Provider<GoRouter>((ref) {
+  final authState = ref.watch(authStateProvider);
+
+  return GoRouter(
     initialLocation: '/login',
+    redirect: (context, state) {
+      // Check if the user is logged in
+      final isLoggedIn = authState.value != null;
+      final isGoingToAuth = state.matchedLocation == '/login' || 
+                           state.matchedLocation == '/signup';
+
+      if (!isLoggedIn && !isGoingToAuth) {
+        return '/login';
+      }
+
+      if (isLoggedIn && isGoingToAuth) {
+        return '/home';
+      }
+
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/login',
@@ -22,6 +42,10 @@ class AppRouter {
         path: '/home',
         builder: (context, state) => const HomeScreen(),
       ),
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const ProfileScreen(),
+      ),
     ],
   );
-} 
+}); 

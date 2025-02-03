@@ -109,3 +109,17 @@ Future<void> signIn(String email, String password) async {
     - Users are authenticated correctly.
     - A new document is created in the Firestore **users** collection upon signup.
     - Security rules are enforced as expected.
+
+
+To use a user in any other file, you can use the following code:
+```
+// In any ConsumerWidget:
+final user = ref.watch(currentUserProvider);
+
+
+// Or in a provider:
+final someProvider = Provider<Something>((ref) {
+  final user = ref.watch(currentUserProvider);
+  // Use user...
+});
+```

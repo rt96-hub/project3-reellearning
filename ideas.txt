@@ -10,8 +10,11 @@ The user's login info/status needs to be stored on the device so they can be log
 implement the back drag gesture for navigation
 when the app is minimized, it stays on the page when they reopen
 
-validate email is correct format
-validate phone number is correct format
+x validate email is correct format
+- add email verification
+- prevent login if email is not verified
+- validate phone number is correct format
+
 
 bottom bar should be:
 - feed
@@ -46,11 +49,15 @@ bottom bar should be:
             - either joinable or invitable
     - when anyone whos part of the class opens it, it brings them to that video feed
         - maybe one button to open, one is a big chat channel
+    - classes page:
+        - name, creator, description, join button
+        - can still see feed maybe?
 
 
 - profile
     - name, pfp, description, etc
     - posted videos
-    - classes
+    - classes created
+    - classes joined
     - follow button
 
