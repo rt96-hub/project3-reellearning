@@ -43,6 +43,7 @@ class _LoginFormState extends State<LoginForm> {
     }
   }
 
+  // TODO: consider removing this??? or doing something else with it
   void _showSuccessMessage() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
