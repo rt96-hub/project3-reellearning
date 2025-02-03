@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reellearning_fe/src/shared/widgets/custom_button.dart';
 import 'package:reellearning_fe/src/shared/widgets/custom_text_field.dart';
+import 'package:reellearning_fe/src/features/auth/data/services/auth_service.dart';
 
 class SignupForm extends StatefulWidget {
   const SignupForm({super.key});
@@ -16,6 +17,7 @@ class _SignupFormState extends State<SignupForm> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _authService = AuthService();
   bool _isLoading = false;
   bool _showPassword = false;
   bool _showConfirmPassword = false;
@@ -39,8 +41,12 @@ class _SignupFormState extends State<SignupForm> {
       setState(() => _isLoading = true);
 
       try {
-        // Simulate signup delay
-        await Future.delayed(const Duration(seconds: 1));
+        await _authService.signUp(
+          _emailController.text.trim(),
+          _passwordController.text,
+          _phoneController.text.trim(),
+        );
+        
         if (mounted) {
           context.go('/login');
           _showSuccessMessage();
@@ -73,6 +79,18 @@ class _SignupFormState extends State<SignupForm> {
     );
   }
 
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your email';
+    }
+    // Basic email validation
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(value)) {
+      return 'Please enter a valid email';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -85,12 +103,7 @@ class _SignupFormState extends State<SignupForm> {
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             prefixIcon: const Icon(Icons.email_outlined),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your email';
-              }
-              return null;
-            },
+            validator: _validateEmail,
           ),
           const SizedBox(height: 16),
           CustomTextField(
