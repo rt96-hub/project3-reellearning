@@ -1,0 +1,14 @@
+learning app
+- user sees videos, tailored to their level/interests
+- users can make lists with specific topics
+- users can engage with other users in chats about specific videos or creators
+- users can generate progress reports, or suggestions for what to learn next (or does app just do this?)
+- users can set goals, and the app will suggest content accordingly
+- users can join classes or clubs, and maybe this is similar to lists, but with more generalized topics
+
+The user's login info/status needs to be stored on the device so they can be logged in when they reopen
+implement the back drag gesture for navigation
+when the app is minimized, it stays on the page when they reopen
+
+validate email is correct format
+validate phone number is correct format
