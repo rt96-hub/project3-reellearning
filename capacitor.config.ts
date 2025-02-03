@@ -1,11 +1,11 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'dev.lovable.REPLACE_WITH_PROJECT_ID',
+  appId: 'dev.lovable.322c8490-61f7-402a-b4fa-3382da0145b3',
   appName: 'LovableApp',
   webDir: 'dist',
   server: {
-    url: 'https://REPLACE_WITH_PROJECT_ID.lovableproject.com?forceHideBadge=true',
+    url: 'https://322c8490-61f7-402a-b4fa-3382da0145b3.lovableproject.com?forceHideBadge=true',
     cleartext: true
   },
   ios: {
