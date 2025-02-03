@@ -81,10 +81,10 @@ class ProfileScreen extends ConsumerWidget {
               context.go('/home');
               break;
             case 1:
-              // TODO: Navigate to messages
+              context.go('/messages');
               break;
             case 2:
-              // TODO: Navigate to classes
+              context.go('/classes');
               break;
             case 3:
               // Already on profile

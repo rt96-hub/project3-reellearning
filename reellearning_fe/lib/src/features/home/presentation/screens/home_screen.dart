@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:reellearning_fe/src/features/auth/data/providers/auth_provider.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/video_action_buttons.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentIndex = 0;
   bool _showFullDescription = false;
   
@@ -27,10 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
         context.go('/home');
         break;
       case 1:
-        // TODO: Navigate to messages
+        context.go('/messages');
         break;
       case 2:
-        // TODO: Navigate to classes
+        context.go('/classes');
         break;
       case 3:
         context.go('/profile');
@@ -40,6 +42,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Add user context
+    final user = ref.watch(currentUserProvider);
+
     return Scaffold(
       body: Stack(
         children: [
