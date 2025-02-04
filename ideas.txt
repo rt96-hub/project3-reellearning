@@ -75,3 +75,13 @@ bottom bar should be:
     - settings (if you are the user)
 
 - maybe include a search bar for classes, users, videos, etc
+
+
+- different video formats??
+    - mp4
+    - webm
+    - what do phones record
+
+
+
+https://firebasestorage.googleapis.com/v0/b/reellearning-prj3.firebasestorage.app/o/videos%2Fsample1_low.mp4?alt=media&token=11a36ecf-34b7-4b31-944b-90c227f943ba

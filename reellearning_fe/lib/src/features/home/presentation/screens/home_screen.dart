@@ -2,27 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reellearning_fe/src/features/auth/data/providers/auth_provider.dart';
+import 'package:reellearning_fe/src/features/videos/data/providers/video_provider.dart';
+import 'package:reellearning_fe/src/shared/widgets/video_player_widget.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/video_action_buttons.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  int _currentIndex = 0;
+  final PageController _pageController = PageController();
+  int _currentVideoIndex = 0;
+  int _currentNavIndex = 0;
   bool _showFullDescription = false;
   
-  final String _description = 
-    "This is an amazing video showing the beautiful sunset at the beach. "
-    "The waves are crashing against the shore while seagulls fly overhead, "
-    "creating a perfect moment of peace and tranquility.";
-
   void _onTabTapped(int index) {
-    setState(() => _currentIndex = index);
+    setState(() => _currentNavIndex = index);
     
     switch (index) {
       case 0:
@@ -42,18 +41,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Add user context
-    final user = ref.watch(currentUserProvider);
+    final videos = ref.watch(paginatedVideoProvider);
+    final userProfile = ref.watch(currentUserProvider);
 
     return Scaffold(
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
           // Video Container
-          Container(
-            color: Colors.black,
-            child: const Center(
-              child: Placeholder(), // Replace with actual video player
-            ),
+          PageView.builder(
+            controller: _pageController,
+            scrollDirection: Axis.vertical,
+            itemCount: videos.length,
+            onPageChanged: (index) async {
+              setState(() {
+                _currentVideoIndex = index;
+              });
+              // If the user is near the end, load more videos
+              if (index >= videos.length - 2) {
+                await ref.read(paginatedVideoProvider.notifier).loadMore();
+              }
+            },
+            itemBuilder: (context, index) {
+              final video = videos[index];
+              return SizedBox.expand(
+                child: video.videoUrl.isNotEmpty
+                    ? VideoPlayerWidget(videoUrl: video.videoUrl)
+                    : const Center(
+                        child: Text(
+                          'Video URL not available',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+              );
+            },
           ),
 
           // Video Info Overlay
@@ -63,50 +84,51 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             right: 0,
             child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // User Avatar
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundImage: const AssetImage('assets/placeholder.png'),
-                    // need to make the avatar a profile picture of the video creator. so will not be a placeholder
-                  ),
-                  const SizedBox(width: 12),
-                  // Username and Description
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '@username',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _showFullDescription = !_showFullDescription;
-                            });
-                          },
-                          child: Text(
-                            _description,
+              child: videos.isEmpty 
+                ? const Center(child: CircularProgressIndicator())
+                : Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // User Avatar
+                    const CircleAvatar(
+                      radius: 20,
+                      backgroundImage: AssetImage('assets/placeholder.png'),
+                    ),
+                    const SizedBox(width: 12),
+                    // Video Info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            videos[_currentVideoIndex].title,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
                             ),
-                            maxLines: _showFullDescription ? null : 2,
-                            overflow: _showFullDescription ? null : TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _showFullDescription = !_showFullDescription;
+                              });
+                            },
+                            child: Text(
+                              videos[_currentVideoIndex].description,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                              maxLines: _showFullDescription ? null : 2,
+                              overflow: _showFullDescription ? null : TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
             ),
           ),
 
@@ -123,7 +145,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             left: 0,
             right: 0,
             child: BottomNavBar(
-              currentIndex: _currentIndex,
+              currentIndex: _currentNavIndex,
               onTap: _onTabTapped,
             ),
           ),
