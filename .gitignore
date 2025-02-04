@@ -71,3 +71,7 @@ migrate_working_dir/
 .env
 old_frontend/
 docs_ignore/
+0sample_videos/
+
+
+serviceAccountKey.json
