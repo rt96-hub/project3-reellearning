@@ -5,9 +5,11 @@ learning app
 - users can generate progress reports, or suggestions for what to learn next (or does app just do this?)
 - users can set goals, and the app will suggest content accordingly
 - users can join classes or clubs, and maybe this is similar to lists, but with more generalized topics
+- users can mark videos as not understood, partially understood, or fully understood, and the app will suggest more content accordingly
+    - this needs to be relevant to the specific type of content they are watching, math or history comprehesion shouldn't be directly related
 
 The user's login info/status needs to be stored on the device so they can be logged in when they reopen
-implement the back drag gesture for navigation
+implement the back drag gesture for navigation(maybe not)
 when the app is minimized, it stays on the page when they reopen
 
 x validate email is correct format
@@ -34,9 +36,14 @@ bottom bar should be:
             - copy link
     - tap profile to open users profile
     - description to expand the text
+    - three buttons on the bottom (like tinder):
+        - don't understand
+        - partially understand
+        - fully understand
     - slide the screen down to see more videos
         - repeat
         - forever
+
 
 - messages
     - chat with other users
@@ -59,5 +66,7 @@ bottom bar should be:
     - posted videos
     - classes created
     - classes joined
-    - follow button
+    - follow/block buttons (if you are not the user)
+    - settings (if you are the user)
 
+- maybe include a search bar for classes, users, videos, etc
