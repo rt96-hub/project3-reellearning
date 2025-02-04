@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:reellearning_fe/src/features/auth/data/providers/auth_provider.dart';
 import 'package:reellearning_fe/src/features/videos/data/providers/video_provider.dart';
-import 'package:reellearning_fe/src/shared/widgets/video_player_widget.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/video_action_buttons.dart';
 
@@ -48,34 +47,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Video Container
-          PageView.builder(
-            controller: _pageController,
-            scrollDirection: Axis.vertical,
-            itemCount: videos.length,
-            onPageChanged: (index) async {
-              setState(() {
-                _currentVideoIndex = index;
-              });
-              // If the user is near the end, load more videos
-              if (index >= videos.length - 2) {
-                await ref.read(paginatedVideoProvider.notifier).loadMore();
-              }
-            },
-            itemBuilder: (context, index) {
-              final video = videos[index];
-              return SizedBox.expand(
-                child: video.videoUrl.isNotEmpty
-                    ? VideoPlayerWidget(videoUrl: video.videoUrl)
-                    : const Center(
-                        child: Text(
-                          'Video URL not available',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-              );
-            },
-          ),
+          // Video player will go here
 
           // Video Info Overlay
           Positioned(

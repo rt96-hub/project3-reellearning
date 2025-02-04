@@ -80,7 +80,15 @@ Future<String> getVideoUrl(String videoPath) async {
 
 class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
   PaginatedVideoNotifier() : super([]) {
-    _fetchNextBatch();
+    // _fetchNextBatch();
+    _loadLocalVideos();
+  }
+
+  void _loadLocalVideos() {
+    state = [
+      VideoModel.local(id: 'local_1', title: 'Sample Video 1'),
+      VideoModel.local(id: 'local_2', title: 'Sample Video 2'),
+    ];
   }
 
   DocumentSnapshot? _lastDoc;
