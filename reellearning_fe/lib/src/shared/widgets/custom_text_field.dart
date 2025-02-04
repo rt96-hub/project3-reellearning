@@ -8,6 +8,9 @@ class CustomTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
+  final bool enabled;
+  final bool autofocus;
+  final TextInputAction? textInputAction;
 
   const CustomTextField({
     super.key,
@@ -18,6 +21,9 @@ class CustomTextField extends StatelessWidget {
     this.keyboardType,
     this.prefixIcon,
     this.suffixIcon,
+    this.enabled = true,
+    this.autofocus = false,
+    this.textInputAction,
   });
 
   @override
@@ -26,6 +32,9 @@ class CustomTextField extends StatelessWidget {
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
+      enabled: enabled,
+      autofocus: autofocus,
+      textInputAction: textInputAction,
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),

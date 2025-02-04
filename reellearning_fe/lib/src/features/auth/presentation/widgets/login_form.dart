@@ -37,7 +37,6 @@ class _LoginFormState extends State<LoginForm> {
         
         if (mounted) {
           context.go('/home');
-          _showSuccessMessage();
         }
       } catch (e) {
         _showErrorMessage(e.toString());
@@ -47,16 +46,6 @@ class _LoginFormState extends State<LoginForm> {
         }
       }
     }
-  }
-
-  // TODO: consider removing this??? or doing something else with it
-  void _showSuccessMessage() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('You have been signed in successfully'),
-        backgroundColor: Colors.green,
-      ),
-    );
   }
 
   void _showErrorMessage(String message) {
@@ -92,12 +81,14 @@ class _LoginFormState extends State<LoginForm> {
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             validator: _validateEmail,
+            textInputAction: TextInputAction.next,
           ),
           const SizedBox(height: 16),
           CustomTextField(
             label: 'Password',
             controller: _passwordController,
             obscureText: true,
+            textInputAction: TextInputAction.done,
             validator: (value) {
               if (value == null || value.isEmpty) {
                 return 'Please enter your password';
