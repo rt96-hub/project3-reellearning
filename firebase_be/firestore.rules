@@ -110,9 +110,10 @@ service cloud.firestore {
       // Any authenticated user can create a membership
       allow create: if isAuthenticated();
       
-      // Only the user referenced in the document can update or delete their membership
+      // Users can only update/delete their own memberships
+      // The membershipId must be in format: "{userId}_{classId}"
       allow update, delete: if isAuthenticated() &&
-                          resource.data.userId.id == request.auth.uid;
+                          membershipId.split('_')[0] == request.auth.uid;
     }
 
     // Default deny
