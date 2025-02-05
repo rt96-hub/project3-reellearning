@@ -64,7 +64,8 @@ class VideoModel {
     }
   }
 
-  // Add this factory constructor for local testing
+  // Comment out local testing constructor
+  /*
   factory VideoModel.local({
     String id = 'local_1',
     String title = 'Sample Video',
@@ -74,16 +75,17 @@ class VideoModel {
       id: id,
       title: title,
       description: description,
-      videoUrl: 'assets/videos/sample1.mp4',  // Local asset path
+      videoUrl: 'assets/videos/sample_phone.mp4',  // Local asset path
       thumbnailUrl: '',
       creator: FirebaseFirestore.instance.doc('users/test_user'),
       uploadedAt: DateTime.now(),
     );
   }
+  */
 
   bool get isPlayable {
     return videoUrl.isNotEmpty && (
-      videoUrl.startsWith('assets/') || 
+      // videoUrl.startsWith('assets/') || 
       videoUrl.startsWith('http') || 
       videoUrl.startsWith('https') || 
       videoUrl.startsWith('gs://')
