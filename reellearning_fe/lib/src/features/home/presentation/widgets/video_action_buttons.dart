@@ -21,8 +21,8 @@ class VideoActionButtons extends ConsumerStatefulWidget {
 
 class _VideoActionButtonsState extends ConsumerState<VideoActionButtons> {
   bool isLiked = false;
-  bool isBookmarked = false;
   late int currentLikeCount;
+  bool isBookmarked = false;
   
   @override
   void initState() {
@@ -34,10 +34,13 @@ class _VideoActionButtonsState extends ConsumerState<VideoActionButtons> {
   @override
   void didUpdateWidget(VideoActionButtons oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.likeCount != widget.likeCount) {
-      setState(() => currentLikeCount = widget.likeCount);
-    }
     if (oldWidget.videoId != widget.videoId) {
+      // Reset state when video changes
+      setState(() {
+        currentLikeCount = widget.likeCount;
+        isLiked = false;
+        isBookmarked = false;
+      });
       _checkIfLiked();
     }
   }
