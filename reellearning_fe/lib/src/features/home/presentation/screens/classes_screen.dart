@@ -107,6 +107,10 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> with SingleTicker
     return Scaffold(
       appBar: AppBar(
         title: const Text('Classes'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
