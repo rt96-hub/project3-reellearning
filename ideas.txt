@@ -75,14 +75,27 @@ bottom bar should be:
     - classes page:
         - name, creator, description, join button
         - can still see feed maybe?
+        - members list popout
+            - curator first
+            - then members
+            - can click any member to go to their profile
 
+
+- video attributes to flesh out:
+    - title
+    - description
+    - tags
+    - thumbnail
+    - (tags for now, eventually generate topics and subtopics, and level of difficulty)
+    - (or the above tags are suggested when you upload a video and the AI scans it)
+    
 
 - profile
     - name, pfp, description, etc
     - posted videos
     - classes created
     - classes joined
-    - follow/block buttons (if you are not the user)
+    - connect/block buttons (if you are not the user)
     - settings (if you are the user)
 
 x maybe include a search page
@@ -99,5 +112,13 @@ x maybe include a search page
     - what do phones record
 
 
+- ai enhancements:
+    - ai can generate report cards for a user, based on their activity over a period of time
+    - for a curator of a class, the ai can aggregate the activity of users in the class to help guide the curation of the class
+    - ai can generate questions and answers for a particular subject, appears randomly in the feed
+        - can be answered or skipped, helps determine user's level of understanding
+        - do we gamify somehow?
+        - store a list of all the questions a user has done, and the level of understanding they had
+        - appears "randomly" in the feed, based on time or topic
+    - STRETCH: ai can maybe generate videos???
 
-https://firebasestorage.googleapis.com/v0/b/reellearning-prj3.firebasestorage.app/o/videos%2Fsample1_low.mp4?alt=media&token=11a36ecf-34b7-4b31-944b-90c227f943ba

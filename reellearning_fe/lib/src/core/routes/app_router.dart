@@ -6,6 +6,7 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/home/presentation/screens/profile_screen.dart';
+import '../../features/home/presentation/screens/edit_profile_screen.dart';
 import '../../features/home/presentation/screens/messages_screen.dart';
 import '../../features/home/presentation/screens/classes_screen.dart';
 import '../../features/home/presentation/screens/class_detail_screen.dart';
@@ -47,10 +48,53 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/home',
         builder: (context, state) => const HomeScreen(),
       ),
+      // Profile routes - static paths first
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfileScreen(),
       ),
+      GoRoute(
+        path: '/profile/edit',
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: '/profile/liked-videos',
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('Liked Videos - Coming Soon')),
+        ),
+      ),
+      GoRoute(
+        path: '/profile/bookmarked',
+        builder: (context, state) => const Scaffold(
+          body: Center(child: Text('Bookmarked Videos - Coming Soon')),
+        ),
+      ),
+      // Profile routes with parameters
+      GoRoute(
+        path: '/profile/:userId',
+        builder: (context, state) => ProfileScreen(
+          userId: state.pathParameters['userId'],
+        ),
+      ),
+      GoRoute(
+        path: '/profile/:userId/liked-videos',
+        builder: (context, state) => Scaffold(
+          body: Center(child: Text('${state.pathParameters['userId']}\'s Liked Videos - Coming Soon')),
+        ),
+      ),
+      GoRoute(
+        path: '/profile/:userId/bookmarked',
+        builder: (context, state) => Scaffold(
+          body: Center(child: Text('${state.pathParameters['userId']}\'s Bookmarked Videos - Coming Soon')),
+        ),
+      ),
+      GoRoute(
+        path: '/profile/:userId/classes',
+        builder: (context, state) => Scaffold(
+          body: Center(child: Text('${state.pathParameters['userId']}\'s Classes - Coming Soon')),
+        ),
+      ),
+      // Other routes
       GoRoute(
         path: '/messages',
         builder: (context, state) => const MessagesScreen(),

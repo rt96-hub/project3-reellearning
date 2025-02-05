@@ -2,77 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:reellearning_fe/src/features/auth/data/providers/auth_provider.dart';
 import '../widgets/bottom_nav_bar.dart';
 
 class ProfileScreen extends ConsumerWidget {
-  const ProfileScreen({super.key});
-
-  Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
-    try {
-      await ref.read(authServiceProvider).signOut();
-      if (context.mounted) {
-        context.go('/login');
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error logging out: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
+  final String? userId;
+  const ProfileScreen({super.key, this.userId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider);
+    final currentUser = ref.watch(currentUserProvider);
+    final isOwnProfile = userId == null || userId == currentUser?.uid;
+    final userIdToShow = userId ?? currentUser?.uid;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.account_circle,
-              size: 100,
-              color: Colors.grey,
+      body: userIdToShow == null
+          ? const Center(child: Text('No user found'))
+          : _UserProfileContent(
+              userId: userIdToShow,
+              isOwnProfile: isOwnProfile,
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Hello, ${user?.email ?? 'User'}!',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 24),
-            _UserDetails(userId: user?.uid),
-            const SizedBox(height: 32),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: ElevatedButton(
-                onPressed: () => _handleLogout(context, ref),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size.fromHeight(50),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.logout),
-                    SizedBox(width: 8),
-                    Text('Logout'),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: 4,
         onTap: (index) {
@@ -90,7 +43,9 @@ class ProfileScreen extends ConsumerWidget {
               context.go('/messages');
               break;
             case 4:
-              // Already on profile
+              if (!isOwnProfile) {
+                context.go('/profile');
+              }
               break;
           }
         },
@@ -99,15 +54,17 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-class _UserDetails extends ConsumerWidget {
-  final String? userId;
+class _UserProfileContent extends ConsumerWidget {
+  final String userId;
+  final bool isOwnProfile;
 
-  const _UserDetails({this.userId});
+  const _UserProfileContent({
+    required this.userId,
+    required this.isOwnProfile,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (userId == null) return const SizedBox.shrink();
-
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
           .collection('users')
@@ -115,28 +72,202 @@ class _UserDetails extends ConsumerWidget {
           .snapshots(),
       builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
         if (snapshot.hasError) {
-          return Text('Error: ${snapshot.error}');
+          return Center(child: Text('Error: ${snapshot.error}'));
         }
 
         if (!snapshot.hasData || !snapshot.data!.exists) {
-          return const CircularProgressIndicator();
+          return const Center(child: CircularProgressIndicator());
         }
 
         final userData = snapshot.data!.data() as Map<String, dynamic>;
+        final profile = userData['profile'] as Map<String, dynamic>? ?? {};
+        final createdAt = userData['createdAt'] as Timestamp?;
+        final memberSince = createdAt != null
+            ? DateFormat.yMMMd().format(createdAt.toDate())
+            : 'Unknown';
 
-        return Column(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.email),
-              title: Text(userData['email'] ?? 'No email'),
-            ),
-            ListTile(
-              leading: const Icon(Icons.phone),
-              title: Text(userData['phone'] ?? 'No phone number'),
-            ),
-          ],
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              // Profile Image
+              CircleAvatar(
+                radius: 50,
+                backgroundImage: profile['avatarUrl'] != null
+                    ? NetworkImage(profile['avatarUrl'])
+                    : null,
+                child: profile['avatarUrl'] == null
+                    ? const Icon(Icons.person, size: 50)
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              
+              // Display Name
+              Text(
+                profile['displayName'] ?? 'No Name',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 8),
+              
+              // Member Since
+              Text(
+                'Member since: $memberSince',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              
+              // Biography
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Text(
+                  profile['biography'] ?? 'No biography',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Action Buttons
+              if (isOwnProfile) ...[
+                _buildOwnProfileActions(context, ref),
+              ] else ...[
+                _buildOtherProfileActions(context),
+              ],
+            ],
+          ),
         );
       },
     );
+  }
+
+  Widget _buildOwnProfileActions(BuildContext context, WidgetRef ref) {
+    return Column(
+      children: [
+        ElevatedButton.icon(
+          onPressed: () {
+            context.go('/profile/edit');
+          },
+          icon: const Icon(Icons.edit),
+          label: const Text('Edit Profile'),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(200, 45),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: () {
+            context.go('/profile/liked-videos');
+          },
+          icon: const Icon(Icons.favorite),
+          label: const Text('Liked Videos'),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(200, 45),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: () {
+            context.go('/profile/bookmarked');
+          },
+          icon: const Icon(Icons.bookmark),
+          label: const Text('Bookmarked'),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(200, 45),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: () => _handleLogout(context, ref),
+          icon: const Icon(Icons.logout),
+          label: const Text('Logout'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(200, 45),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOtherProfileActions(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton.icon(
+              onPressed: () {
+                // TODO: Implement friend action
+              },
+              icon: const Icon(Icons.person_add),
+              label: const Text('Add Friend'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                // TODO: Implement block action
+              },
+              icon: const Icon(Icons.block),
+              label: const Text('Block'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        ElevatedButton.icon(
+          onPressed: () {
+            context.go('/profile/${userId}/liked-videos');
+          },
+          icon: const Icon(Icons.favorite),
+          label: const Text('Liked Videos'),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(200, 45),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: () {
+            context.go('/profile/${userId}/bookmarked');
+          },
+          icon: const Icon(Icons.bookmark),
+          label: const Text('Bookmarked'),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(200, 45),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: () {
+            context.go('/profile/${userId}/classes');
+          },
+          icon: const Icon(Icons.class_),
+          label: const Text('View Classes'),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(200, 45),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(authServiceProvider).signOut();
+      if (context.mounted) {
+        context.go('/login');
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error logging out: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 } 
