@@ -43,7 +43,7 @@ bottom bar should be:
         - share:
             - either other users or classes(?)
             - copy link
-    - tap profile to open users profile
+    x tap profile to open users profile
     - description to expand the text
     x three buttons on the bottom (like tinder):
         x don't understand
@@ -93,10 +93,11 @@ bottom bar should be:
 
 - profile
     - how to navigate to another users profile?
-        - from icon/name on video feed
+        x from icon/name on video feed
+        x from class owner
         - from class members list
         - from search
-        - from comments
+        x from comments
         - from messages
     x name, pfp, description, etc
     - posted videos
@@ -119,7 +120,11 @@ x maybe include a search page
     - user created videos (from any users profile/video page)
     - class bookmarked videos
 
-- going back to the home screen doesnt reset the feed
+- weird back navigation issues:
+    - after opening profile from comments, back button works correct, then go to class detail and that profile, back button brings you to the comments
+- going back to the home screen doesnt reset the feed (might already be done)
+- dont make a video load a second time when you go back up the feed, maybe clear the cache after like 10 videos or something
+- partial load later videos, so they can start without a delay, and load while you watch
 
 - different video formats??
     - mp4

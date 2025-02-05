@@ -15,34 +15,37 @@ class ClassDetailScreen extends ConsumerWidget {
     required this.classId,
   });
 
-  Widget _buildCreatorInfo(WidgetRef ref, DocumentReference creatorRef) {
+  Widget _buildCreatorInfo(BuildContext context, WidgetRef ref, DocumentReference creatorRef) {
     final userData = ref.watch(userDataProvider(creatorRef));
 
     return userData.when(
-      data: (data) => Row(
-        children: [
-          CircleAvatar(
-            backgroundImage: data['avatarUrl'] != null
-                ? NetworkImage(data['avatarUrl'])
-                : null,
-            child: data['avatarUrl'] == null
-                ? const Icon(Icons.person)
-                : null,
-          ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                data['displayName'] ?? 'Unknown User',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
+      data: (data) => GestureDetector(
+        onTap: () => context.go('/profile/${creatorRef.id}'),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundImage: data['avatarUrl'] != null
+                  ? NetworkImage(data['avatarUrl'])
+                  : null,
+              child: data['avatarUrl'] == null
+                  ? const Icon(Icons.person)
+                  : null,
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  data['displayName'] ?? 'Unknown User',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const Text('Creator'),
-            ],
-          ),
-        ],
+                const Text('Creator'),
+              ],
+            ),
+          ],
+        ),
       ),
       loading: () => const CircularProgressIndicator(),
       error: (_, __) => const Text('Error loading creator info'),
@@ -183,7 +186,7 @@ class ClassDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
 
                 // Creator Info
-                _buildCreatorInfo(ref, classModel.creator),
+                _buildCreatorInfo(context, ref, classModel.creator),
                 const SizedBox(height: 16),
 
                 // Class Stats

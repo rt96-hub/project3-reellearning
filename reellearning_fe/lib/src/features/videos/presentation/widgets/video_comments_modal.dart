@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:go_router/go_router.dart';
 import 'package:reellearning_fe/src/features/auth/data/providers/auth_provider.dart';
 
 class VideoCommentsModal extends ConsumerStatefulWidget {
@@ -179,9 +180,11 @@ class _VideoCommentsModalState extends ConsumerState<VideoCommentsModal> {
                     return FutureBuilder(
                       future: (commentData['author']['ref'] as DocumentReference).get(),
                       builder: (context, authorSnapshot) {
-                        final authorName = authorSnapshot.hasData
-                            ? (authorSnapshot.data!.data() as Map<String, dynamic>)?['profile']?['displayName'] ?? 'Anonymous'
-                            : 'Loading...';
+                        final authorData = authorSnapshot.hasData
+                            ? ((authorSnapshot.data!.data() as Map<String, dynamic>)?['profile'] as Map<String, dynamic>?) ?? {}
+                            : <String, dynamic>{};
+                        final authorName = authorData['displayName'] ?? 'Anonymous';
+                        final authorId = (commentData['author']['ref'] as DocumentReference).id;
 
                         return StreamBuilder(
                           stream: FirebaseFirestore.instance
@@ -200,11 +203,28 @@ class _VideoCommentsModalState extends ConsumerState<VideoCommentsModal> {
                                   children: [
                                     Row(
                                       children: [
-                                        Text(
-                                          authorName,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
+                                        GestureDetector(
+                                          onTap: () => context.go('/profile/$authorId'),
+                                          child: Row(
+                                            children: [
+                                              CircleAvatar(
+                                                radius: 16,
+                                                backgroundImage: authorData['avatarUrl'] != null
+                                                    ? NetworkImage(authorData['avatarUrl'] as String)
+                                                    : null,
+                                                child: authorData['avatarUrl'] == null
+                                                    ? const Icon(Icons.person, size: 16)
+                                                    : null,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                authorName,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                         const Spacer(),
@@ -230,9 +250,9 @@ class _VideoCommentsModalState extends ConsumerState<VideoCommentsModal> {
                                 ),
                               ),
                             );
-                          }
+                          },
                         );
-                      }
+                      },
                     );
                   },
                 );
