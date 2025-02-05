@@ -127,6 +127,7 @@ x profile
     x connect/block buttons (if you are not the user)
     x settings (if you are the user)
         - need a settings page (eventually)
+    - direct message (if you are not the user)
 
 
 x maybe include a search page
@@ -151,6 +152,7 @@ x maybe include a search page
     x double tap on the left or right quarter to skip back/forward x seconds
         - maybe double tap and hold to scrub??? (NAH MAYBE LATER)
     x video progress bar
+    - mark understanding
 
 
 - weird back navigation issues:

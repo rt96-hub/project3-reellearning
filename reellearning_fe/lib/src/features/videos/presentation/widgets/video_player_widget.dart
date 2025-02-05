@@ -278,7 +278,7 @@ Position: ${controller.value.position}
         // Mute/Unmute Button
         if (_isInitialized && _controller != null)
           Positioned(
-            top: 16,
+            top: 48,
             right: 16,
             child: GestureDetector(
               onTap: _toggleMute,
