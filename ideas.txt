@@ -26,9 +26,11 @@ bottom bar should be:
 - feed
     - how does the video need to be formatted, how do we display different resolutions/filetypes?
     - sidebar of comments, bookmarked, liked, etc
-        - comments:
-            - comments open up a bottom half modal, highly liked comments go to the topic
-            - comments can be liked, bookmarked, etc
+        x comments:
+            x comments open up a bottom half modal, highly liked comments go to the topic
+            x comments can be liked 
+            - comments can be bookmarked
+            - comments can be replied to
         - likes:
             - when liked, brings up a modal of all the classes you have made
             - you can select any number of classes (or none for a general like) to like the video for
@@ -36,18 +38,21 @@ bottom bar should be:
             - will train the algorithm to show more in those classes
         - bookmarked:
             - saves for later in user profile
+            - save in a particular class or general? similar to likes
+            - stores in a separate collection with the joint, or is it a sub collection of videoIds in like users.bookmarks....
         - share:
             - either other users or classes(?)
             - copy link
     - tap profile to open users profile
     - description to expand the text
-    - three buttons on the bottom (like tinder):
-        - don't understand
-        - partially understand
-        - fully understand
-    - slide the screen down to see more videos
-        - repeat
-        - forever
+    x three buttons on the bottom (like tinder):
+        x don't understand
+        x partially understand
+        x fully understand
+        - make the understanding schema to allow these to be tracked
+    x slide the screen down to see more videos
+        x repeat
+        - forever (do infinite/random stuff)
 
 
 - messages
@@ -55,9 +60,15 @@ bottom bar should be:
     - can be grouped into a chat room
 
 - classes
+    - classes page
+        - three tabs:
+            - classes you are a creator of
+            - classes you are in
+            - discover public classes
     - individually created
         - essentially a tailored algorithm that finds videos relevant to the topic (math, chem, etc)
         - can be public or private
+
             - either joinable or invitable
     - when anyone whos part of the class opens it, it brings them to that video feed
         - maybe one button to open, one is a big chat channel
@@ -74,7 +85,12 @@ bottom bar should be:
     - follow/block buttons (if you are not the user)
     - settings (if you are the user)
 
-- maybe include a search bar for classes, users, videos, etc
+x maybe include a search page
+    - for classes
+    - for users
+    - for videos
+
+
 
 
 - different video formats??

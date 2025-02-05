@@ -74,19 +74,22 @@ class ProfileScreen extends ConsumerWidget {
         ),
       ),
       bottomNavigationBar: BottomNavBar(
-        currentIndex: 3,
+        currentIndex: 4,
         onTap: (index) {
           switch (index) {
             case 0:
               context.go('/home');
               break;
             case 1:
-              context.go('/messages');
-              break;
-            case 2:
               context.go('/classes');
               break;
+            case 2:
+              context.go('/search');
+              break;
             case 3:
+              context.go('/messages');
+              break;
+            case 4:
               // Already on profile
               break;
           }

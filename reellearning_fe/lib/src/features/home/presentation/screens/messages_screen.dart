@@ -32,19 +32,22 @@ class MessagesScreen extends ConsumerWidget {
         ),
       ),
       bottomNavigationBar: BottomNavBar(
-        currentIndex: 1,
+        currentIndex: 3,
         onTap: (index) {
           switch (index) {
             case 0:
               context.go('/home');
               break;
             case 1:
-              // Already on messages
-              break;
-            case 2:
               context.go('/classes');
               break;
+            case 2:
+              context.go('/search');
+              break;
             case 3:
+              // Already on messages
+              break;
+            case 4:
               context.go('/profile');
               break;
           }

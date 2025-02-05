@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:reellearning_fe/src/features/auth/data/providers/auth_provider.dart';
 import '../widgets/bottom_nav_bar.dart';
 
-class ClassesScreen extends ConsumerWidget {
-  const ClassesScreen({super.key});
+class SearchScreen extends ConsumerWidget {
+  const SearchScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -13,14 +13,14 @@ class ClassesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Classes'),
+        title: const Text('Search'),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              'Classes Screen',
+              'Search Screen',
               style: TextStyle(fontSize: 24),
             ),
             const SizedBox(height: 16),
@@ -32,17 +32,17 @@ class ClassesScreen extends ConsumerWidget {
         ),
       ),
       bottomNavigationBar: BottomNavBar(
-        currentIndex: 1,
+        currentIndex: 2,
         onTap: (index) {
           switch (index) {
             case 0:
               context.go('/home');
               break;
             case 1:
-              // Already on classes
+              context.go('/classes');
               break;
             case 2:
-              context.go('/search');
+              // Already on search
               break;
             case 3:
               context.go('/messages');
