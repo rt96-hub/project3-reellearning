@@ -172,7 +172,7 @@ Position: ${controller.value.position}
     }
 
     // Hide the overlay after a short delay
-    Future.delayed(const Duration(milliseconds: 500), () {
+    Future.delayed(const Duration(milliseconds: 1000), () {
       if (mounted) {
         setState(() {
           _showSeekOverlay = false;
@@ -205,6 +205,38 @@ Position: ${controller.value.position}
               : const CircularProgressIndicator(),
           ),
         ),
+
+        // Progress Bar (Always Visible)
+        if (_isInitialized && _controller != null)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              height: 3,
+              child: Stack(
+                children: [
+                  // Background track
+                  Container(
+                    color: Colors.white.withOpacity(0.3),
+                  ),
+                  // Progress indicator
+                  ValueListenableBuilder(
+                    valueListenable: _controller!,
+                    builder: (context, VideoPlayerValue value, child) {
+                      return FractionallySizedBox(
+                        widthFactor: value.position.inMilliseconds /
+                                    value.duration.inMilliseconds,
+                        child: Container(
+                          color: Colors.white,
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
 
         // Seek Overlay
         if (_showSeekOverlay && _isInitialized && _controller != null)

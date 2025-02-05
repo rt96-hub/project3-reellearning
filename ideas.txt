@@ -144,12 +144,14 @@ x maybe include a search page
 
 
 - video features:
+    - make sure video doesnt play in the background
     x play/pause videos with tap
     x mute/unmute with icon at top left or right???
         x save mute status between vids
-    - double tap on the left or right quarter to skip back/forward x seconds
-        - maybe double tap and hold to scrub???
-    - video progress bar
+    x double tap on the left or right quarter to skip back/forward x seconds
+        - maybe double tap and hold to scrub??? (NAH MAYBE LATER)
+    x video progress bar
+
 
 - weird back navigation issues:
     - after opening profile from comments, back button works correct, then go to class detail and that profile, back button brings you to the comments
