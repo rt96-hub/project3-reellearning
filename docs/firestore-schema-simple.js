@@ -59,6 +59,7 @@ videoComments: {
         preview: String     // Preview text for links
       }>
     },
+    likeCount: Number,
     metadata: {
       createdAt: Timestamp,
       updatedAt: Timestamp,
@@ -68,6 +69,17 @@ videoComments: {
     },
   }
 }
+
+
+// Comment Likes Collection
+commentLikes: {
+  userId_commentId: {
+    userId: Reference,
+    commentId: Reference,
+    likedAt: Timestamp
+  }
+}
+
 
 // Comment Replies Collection
 commentReplies: {

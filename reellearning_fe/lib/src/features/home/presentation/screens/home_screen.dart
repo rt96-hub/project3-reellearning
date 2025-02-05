@@ -159,10 +159,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
 
           // Right Side Action Buttons
-          const Positioned(
+          Positioned(
             right: 16,
             bottom: 100,
-            child: VideoActionButtons(),
+            child: videos.isEmpty
+              ? const SizedBox()
+              : VideoActionButtons(
+                  videoId: videos[_currentVideoIndex].id,
+                  likeCount: videos[_currentVideoIndex].engagement.likes,
+                ),
           ),
 
           // Bottom Navigation Bar

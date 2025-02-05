@@ -19,7 +19,11 @@ class AuthService {
         'email': email,
         'phone': phone,
         'createdAt': Timestamp.now(),
-        // Add any other user fields you want to store
+        'profile': {
+          'displayName': email.split('@')[0],  // Use part before @ as initial display name
+          'avatarUrl': '',  // Empty for now
+          'biography': ''   // Empty for now
+        }
       });
 
       return userCredential;
@@ -34,10 +38,28 @@ class AuthService {
 
   Future<UserCredential> signIn(String email, String password) async {
     try {
-      return await _auth.signInWithEmailAndPassword(
+      final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      // Check if user document exists and has profile
+      final userDoc = await _firestore.collection('users').doc(userCredential.user!.uid).get();
+      
+      if (!userDoc.exists || !userDoc.data()!.containsKey('profile')) {
+        // Create or update user document with profile
+        await _firestore.collection('users').doc(userCredential.user!.uid).set({
+          'uid': userCredential.user!.uid,
+          'email': email,
+          'profile': {
+            'displayName': email.split('@')[0],
+            'avatarUrl': '',
+            'biography': ''
+          }
+        }, SetOptions(merge: true));  // merge: true ensures we don't overwrite other fields
+      }
+
+      return userCredential;
     } catch (e) {
       if (e is FirebaseAuthException) {
         throw _handleAuthError(e);

@@ -50,9 +50,13 @@ final randomVideoProvider = FutureProvider.autoDispose((ref) async {
       videoUrl: downloadUrl,
       thumbnailUrl: video.thumbnailUrl,
       creator: video.creator,
+      engagement: video.engagement,
+      duration: video.duration,
       uploadedAt: video.uploadedAt,
+      updatedAt: video.updatedAt,
     );
   }
+
   
   return video;
 });
@@ -111,7 +115,13 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
     final querySnapshot = await collectionQuery.get();
     if (querySnapshot.docs.isNotEmpty) {
       _lastDoc = querySnapshot.docs.last;
-      final videos = querySnapshot.docs.map((doc) => VideoModel.fromFirestore(doc)).toList();
+      final videos = querySnapshot.docs.map((doc) {
+        final data = doc.data();
+        print('Raw video data for ${doc.id}: $data'); // Debug log
+        final engagement = (data as Map<String, dynamic>)['engagement'];
+        print('Engagement data: $engagement'); // Debug engagement data
+        return VideoModel.fromFirestore(doc);
+      }).toList();
       state = [...state, ...videos];
       if (videos.length < _limit) _hasMore = false;
     } else {

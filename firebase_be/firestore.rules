@@ -13,7 +13,13 @@ service cloud.firestore {
       allow read: if true;
       
       // Only allow authenticated users to create/update videos
-      allow create, update: if isAuthenticated();
+      // Also allow updating engagement stats (likes)
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && 
+                   (
+                     request.auth.uid == resource.data.creator.id ||
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['engagement'])
+                   );
       
       // Only allow creator to delete their videos
       allow delete: if isAuthenticated() && 
@@ -25,6 +31,55 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAuthenticated() && 
                   request.auth.uid == userId;
+    }
+
+    // Video Comments collection rules
+    match /videoComments/{commentId} {
+      // Anyone can read comments
+      allow read: if true;
+      
+      // Only authenticated users can create comments
+      allow create: if isAuthenticated();
+      
+      // Only comment author can update or delete their comments
+      allow update, delete: if isAuthenticated() &&
+                          (
+                            // Author can update any field
+                            resource.data.author.uid == request.auth.uid ||
+                            // Any authenticated user can update likeCount
+                            (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount']))
+                          );
+    }
+
+    // Comment Likes collection rules
+    match /commentLikes/{likeId} {
+      // Anyone can read likes
+      allow read: if true;
+      
+      // Only authenticated users can create/delete their own likes
+      // The likeId must be in format: "{userId}_{commentId}"
+      allow create, delete: if isAuthenticated() &&
+                          likeId.split('_')[0] == request.auth.uid;
+      
+      // No updates allowed on likes (they can only be created or deleted)
+      allow update: if false;
+    }
+
+    // User Likes collection rules
+    match /userLikes/{likeId} {
+      // Anyone can read likes
+      allow read: if true;
+      
+      // Only authenticated users can create/delete their own likes
+      // The likeId must be in format: "{userId}_{videoId}"
+      allow create: if isAuthenticated();
+      
+      allow delete: if isAuthenticated() &&
+                          likeId.split('_')[0] == request.auth.uid;
+      
+
+      // No updates allowed on likes (they can only be created or deleted)
+      allow update: if false;
     }
 
     // Default deny

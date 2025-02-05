@@ -7,8 +7,11 @@ class VideoModel {
   final String description;
   final String videoUrl;
   final String thumbnailUrl;
-  final DocumentReference creator;
+  final double duration;
   final DateTime uploadedAt;
+  final DateTime updatedAt;
+  final DocumentReference creator;
+  final VideoEngagement engagement;
 
   VideoModel({
     required this.id,
@@ -16,8 +19,11 @@ class VideoModel {
     required this.description,
     required this.videoUrl,
     required this.thumbnailUrl,
-    required this.creator,
+    required this.duration,
     required this.uploadedAt,
+    required this.updatedAt,
+    required this.creator,
+    required this.engagement,
   });
 
   factory VideoModel.fromFirestore(DocumentSnapshot doc) {
@@ -28,6 +34,7 @@ class VideoModel {
     final videoUrl = metadata['videoUrl'] as String? ?? '';
     
     print('Raw videoUrl from Firestore: $videoUrl'); // Debug log
+    print('Raw engagement data: ${data['engagement']}'); // Debug engagement data
     
     return VideoModel(
       id: doc.id,
@@ -35,8 +42,17 @@ class VideoModel {
       description: metadata['description'] ?? '',
       videoUrl: videoUrl,
       thumbnailUrl: metadata['thumbnailUrl'] ?? '',
-      creator: data['creator'] as DocumentReference,
+      duration: (metadata['duration'] ?? 0).toDouble(),
       uploadedAt: (metadata['uploadedAt'] as Timestamp).toDate(),
+      updatedAt: (metadata['updatedAt'] as Timestamp).toDate(),
+      creator: data['creator'] as DocumentReference? ?? FirebaseFirestore.instance.doc('users/unknown'),
+      engagement: VideoEngagement.fromMap(data['engagement'] as Map<String, dynamic>? ?? {
+        'views': 0,
+        'likes': 0,
+        'shares': 0,
+        'completionRate': 0.0,
+        'averageWatchTime': 0.0,
+      }),
     );
   }
 
@@ -89,6 +105,32 @@ class VideoModel {
       videoUrl.startsWith('http') || 
       videoUrl.startsWith('https') || 
       videoUrl.startsWith('gs://')
+    );
+  }
+}
+
+class VideoEngagement {
+  final int views;
+  final int likes;
+  final int shares;
+  final double completionRate;
+  final double averageWatchTime;
+
+  VideoEngagement({
+    required this.views,
+    required this.likes,
+    required this.shares,
+    required this.completionRate,
+    required this.averageWatchTime,
+  });
+
+  factory VideoEngagement.fromMap(Map<String, dynamic> map) {
+    return VideoEngagement(
+      views: map['views'] ?? 0,
+      likes: map['likes'] ?? 0,
+      shares: map['shares'] ?? 0,
+      completionRate: (map['completionRate'] ?? 0).toDouble(),
+      averageWatchTime: (map['averageWatchTime'] ?? 0).toDouble(),
     );
   }
 } 
