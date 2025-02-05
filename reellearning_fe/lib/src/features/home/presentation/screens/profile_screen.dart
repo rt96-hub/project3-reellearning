@@ -62,53 +62,57 @@ class _UserProfileContent extends ConsumerWidget {
             : 'Unknown';
 
         return SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              // Profile Image
-              CircleAvatar(
-                radius: 50,
-                backgroundImage: profile['avatarUrl'] != null
-                    ? NetworkImage(profile['avatarUrl'])
-                    : null,
-                child: profile['avatarUrl'] == null
-                    ? const Icon(Icons.person, size: 50)
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              
-              // Display Name
-              Text(
-                profile['displayName'] ?? 'No Name',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 8),
-              
-              // Member Since
-              Text(
-                'Member since: $memberSince',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
-              
-              // Biography
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Text(
-                  profile['biography'] ?? 'No biography',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Column(
+                  children: [
+                    // Profile Image
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundImage: profile['avatarUrl'] != null
+                          ? NetworkImage(profile['avatarUrl'])
+                          : null,
+                      child: profile['avatarUrl'] == null
+                          ? const Icon(Icons.person, size: 50)
+                          : null,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Display Name
+                    Text(
+                      profile['displayName'] ?? 'No Name',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    
+                    // Member Since
+                    Text(
+                      'Member since: $memberSince',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Biography
+                    Text(
+                      profile['biography'] ?? 'No biography',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    // Action Buttons
+                    if (isOwnProfile) ...[
+                      _buildOwnProfileActions(context, ref),
+                    ] else ...[
+                      _buildOtherProfileActions(context),
+                    ],
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
-              
-              // Action Buttons
-              if (isOwnProfile) ...[
-                _buildOwnProfileActions(context, ref),
-              ] else ...[
-                _buildOtherProfileActions(context),
-              ],
-            ],
+            ),
           ),
         );
       },
@@ -124,6 +128,17 @@ class _UserProfileContent extends ConsumerWidget {
           },
           icon: const Icon(Icons.edit),
           label: const Text('Edit Profile'),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(200, 45),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: () {
+            context.go('/profile/videos');
+          },
+          icon: const Icon(Icons.video_library),
+          label: const Text('Posted Videos'),
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(200, 45),
           ),
@@ -192,6 +207,17 @@ class _UserProfileContent extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 20),
+        ElevatedButton.icon(
+          onPressed: () {
+            context.go('/profile/${userId}/videos');
+          },
+          icon: const Icon(Icons.video_library),
+          label: const Text('Posted Videos'),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(200, 45),
+          ),
+        ),
+        const SizedBox(height: 12),
         ElevatedButton.icon(
           onPressed: () {
             context.go('/profile/${userId}/liked-videos');

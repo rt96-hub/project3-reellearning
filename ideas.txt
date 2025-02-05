@@ -53,6 +53,7 @@ bottom bar should be:
     x slide the screen down to see more videos
         x repeat
         - forever (do infinite/random stuff)
+        - some kind of find next video(s) function in firebase???
 
 
 - messages
@@ -91,8 +92,15 @@ bottom bar should be:
     
 
 - profile
-    - name, pfp, description, etc
+    - how to navigate to another users profile?
+        - from icon/name on video feed
+        - from class members list
+        - from search
+        - from comments
+        - from messages
+    x name, pfp, description, etc
     - posted videos
+        - grid like view
     - classes created
     - classes joined
     - connect/block buttons (if you are not the user)
@@ -103,8 +111,13 @@ x maybe include a search page
     - for users
     - for videos
 
-
-
+- different video feed types
+    - main feed
+    - class specific feed
+    - own user bookmarked videos
+    - own user liked videos
+    - user created videos (from any users profile/video page)
+    - class bookmarked videos
 
 - different video formats??
     - mp4

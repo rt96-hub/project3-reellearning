@@ -94,6 +94,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                         builder: (context, state) => const EditProfileScreen(),
                       ),
                       GoRoute(
+                        path: 'videos',
+                        builder: (context, state) => const Scaffold(
+                          body: Center(child: Text('Your Posted Videos - Coming Soon')),
+                        ),
+                      ),
+                      GoRoute(
                         path: 'liked-videos',
                         builder: (context, state) => const Scaffold(
                           body: Center(child: Text('Liked Videos - Coming Soon')),
@@ -113,6 +119,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                       userId: state.pathParameters['userId'],
                     ),
                     routes: [
+                      GoRoute(
+                        path: 'videos',
+                        builder: (context, state) => Scaffold(
+                          body: Center(child: Text('${state.pathParameters['userId']}\'s Posted Videos - Coming Soon')),
+                        ),
+                      ),
                       GoRoute(
                         path: 'liked-videos',
                         builder: (context, state) => Scaffold(
