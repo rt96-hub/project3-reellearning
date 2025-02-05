@@ -13,6 +13,8 @@ import '../../features/home/presentation/screens/class_detail_screen.dart';
 import '../../features/home/presentation/screens/create_class_screen.dart';
 import '../../features/home/presentation/screens/search_screen.dart';
 import '../../features/home/presentation/screens/class_members_screen.dart';
+import '../../features/home/presentation/screens/user_classes_screen.dart';
+import '../../features/home/presentation/screens/settings_screen.dart';
 import '../widgets/shell_scaffold.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -95,6 +97,10 @@ final routerProvider = Provider<GoRouter>((ref) {
                         builder: (context, state) => const EditProfileScreen(),
                       ),
                       GoRoute(
+                        path: 'settings',
+                        builder: (context, state) => const SettingsScreen(),
+                      ),
+                      GoRoute(
                         path: 'videos',
                         builder: (context, state) => const Scaffold(
                           body: Center(child: Text('Your Posted Videos - Coming Soon')),
@@ -122,8 +128,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                     routes: [
                       GoRoute(
                         path: 'videos',
-                        builder: (context, state) => Scaffold(
-                          body: Center(child: Text('${state.pathParameters['userId']}\'s Posted Videos - Coming Soon')),
+                        builder: (context, state) => const Text('Videos'), // TODO: Implement
+                      ),
+                      GoRoute(
+                        path: 'classes',
+                        builder: (context, state) => UserClassesScreen(
+                          userId: state.pathParameters['userId']!,
+                          displayName: (state.extra as Map<String, dynamic>)['displayName'] as String,
                         ),
                       ),
                       GoRoute(
@@ -136,12 +147,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                         path: 'bookmarked',
                         builder: (context, state) => Scaffold(
                           body: Center(child: Text('${state.pathParameters['userId']}\'s Bookmarked Videos - Coming Soon')),
-                        ),
-                      ),
-                      GoRoute(
-                        path: 'classes',
-                        builder: (context, state) => Scaffold(
-                          body: Center(child: Text('${state.pathParameters['userId']}\'s Classes - Coming Soon')),
                         ),
                       ),
                     ],

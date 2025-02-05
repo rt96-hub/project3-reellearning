@@ -171,6 +171,17 @@ class _UserProfileContent extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         ElevatedButton.icon(
+          onPressed: () {
+            context.go('/profile/settings');
+          },
+          icon: const Icon(Icons.settings),
+          label: const Text('Settings'),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(200, 45),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
           onPressed: () => _handleLogout(context, ref),
           icon: const Icon(Icons.logout),
           label: const Text('Logout'),
@@ -222,37 +233,32 @@ class _UserProfileContent extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 12),
-        ElevatedButton.icon(
-          onPressed: () {
-            context.go('/profile/${userId}/liked-videos');
+        StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(userId)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const CircularProgressIndicator();
+            }
+            
+            final userData = snapshot.data!.data() as Map<String, dynamic>;
+            final profile = userData['profile'] as Map<String, dynamic>? ?? {};
+            
+            return ElevatedButton.icon(
+              onPressed: () {
+                context.go('/profile/${userId}/classes', extra: {
+                  'displayName': profile['displayName'] ?? 'No Name',
+                });
+              },
+              icon: const Icon(Icons.class_),
+              label: const Text('View Classes'),
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size(200, 45),
+              ),
+            );
           },
-          icon: const Icon(Icons.favorite),
-          label: const Text('Liked Videos'),
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(200, 45),
-          ),
-        ),
-        const SizedBox(height: 12),
-        ElevatedButton.icon(
-          onPressed: () {
-            context.go('/profile/${userId}/bookmarked');
-          },
-          icon: const Icon(Icons.bookmark),
-          label: const Text('Bookmarked'),
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(200, 45),
-          ),
-        ),
-        const SizedBox(height: 12),
-        ElevatedButton.icon(
-          onPressed: () {
-            context.go('/profile/${userId}/classes');
-          },
-          icon: const Icon(Icons.class_),
-          label: const Text('View Classes'),
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(200, 45),
-          ),
         ),
       ],
     );

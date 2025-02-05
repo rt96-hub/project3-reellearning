@@ -62,23 +62,22 @@ bottom bar should be:
     - can be grouped into a chat room
 
 - classes
-    - classes page
+    x classes page
         x three tabs:
             x classes you are a creator of
             x classes you are in
             x discover public classes
-    - individually created
+    x individually created
         - essentially a tailored algorithm that finds videos relevant to the topic (math, chem, etc)
         x can be public or private
             x either joinable or invitable
             - invite to be implemented later
-    - classes page:
-        x name, creator, description, join button
+    x classes page:
+        x name, creator, description, join/leave button
         x video feed button
-        - members list popout (from member count)
-            - curator first
-            - then members
-            - can click any member to go to their profile
+        x members list popout (from member count)
+            x show name and role
+            x can click any member to go to their profile
 
 
 - video attributes to flesh out:
@@ -90,21 +89,27 @@ bottom bar should be:
     - (or the above tags are suggested when you upload a video and the AI scans it)
     
 
-- profile
+x profile
     - how to navigate to another users profile?
         x from icon/name on video feed
         x from class owner
-        - from class members list
+        x from class members list
         - from search
         x from comments
         - from messages
     x name, pfp, description, etc
-    - posted videos
+    x posted videos button
         - grid like view
-    - classes created
-    - classes joined
-    - connect/block buttons (if you are not the user)
-    - settings (if you are the user)
+    x liked videos button (if you are the user)
+        - grid like view
+    x bookmarked videos button (if you are the user)
+        - grid like view
+    x classes (if you are not the user) 
+        x row view similar to the class list
+    x connect/block buttons (if you are not the user)
+    x settings (if you are the user)
+        - need a settings page (eventually)
+
 
 x maybe include a search page
     - for classes
@@ -119,8 +124,17 @@ x maybe include a search page
     - user created videos (from any users profile/video page)
     - class bookmarked videos
 
+
+- video features:
+    - play/pause videos with tap
+    - mute/unmute with icon at top left or right???
+    - double tap on the left or right quarter to skip back/forward x seconds
+        - maybe double tap and hold to scrub???
+    - video progress bar
+
 - weird back navigation issues:
     - after opening profile from comments, back button works correct, then go to class detail and that profile, back button brings you to the comments
+    - back arrow in the top left of the profile page brings you to the feed (we need to make it bring you back to the previous page, like the comment, or class list, etc)
 - going back to the home screen doesnt reset the feed (might already be done)
 - dont make a video load a second time when you go back up the feed, maybe clear the cache after like 10 videos or something
 - partial load later videos, so they can start without a delay, and load while you watch
@@ -139,5 +153,6 @@ x maybe include a search page
         - do we gamify somehow?
         - store a list of all the questions a user has done, and the level of understanding they had
         - appears "randomly" in the feed, based on time or topic
+    - ai generated badges or achievements???
     - STRETCH: ai can maybe generate videos???
 
