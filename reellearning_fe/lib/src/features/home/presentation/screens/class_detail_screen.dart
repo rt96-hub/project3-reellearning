@@ -193,7 +193,14 @@ class ClassDetailScreen extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _buildStat('Members', classModel.memberCount.toString()),
+                    _buildStat(
+                      'Members',
+                      classModel.memberCount.toString(),
+                      onTap: () => context.go(
+                        '/classes/${classModel.id}/members',
+                        extra: {'className': classModel.title},
+                      ),
+                    ),
                     _buildStat(
                       'Created',
                       classModel.createdAt.toLocal().toString().split(' ')[0],
@@ -231,23 +238,26 @@ class ClassDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildStat(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+  Widget _buildStat(String label, String value, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.grey[600],
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.grey[600],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 } 

@@ -12,6 +12,7 @@ import '../../features/home/presentation/screens/classes_screen.dart';
 import '../../features/home/presentation/screens/class_detail_screen.dart';
 import '../../features/home/presentation/screens/create_class_screen.dart';
 import '../../features/home/presentation/screens/search_screen.dart';
+import '../../features/home/presentation/screens/class_members_screen.dart';
 import '../widgets/shell_scaffold.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -165,6 +166,15 @@ final routerProvider = Provider<GoRouter>((ref) {
                         builder: (context, state) => ClassDetailScreen(
                           classId: state.pathParameters['classId']!,
                         ),
+                        routes: [
+                          GoRoute(
+                            path: 'members',
+                            builder: (context, state) => ClassMembersScreen(
+                              classId: state.pathParameters['classId']!,
+                              className: (state.extra as Map<String, dynamic>)['className'] as String,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

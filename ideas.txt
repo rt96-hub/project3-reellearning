@@ -44,7 +44,7 @@ bottom bar should be:
             - either other users or classes(?)
             - copy link
     x tap profile to open users profile
-    - description to expand the text
+    ? description to expand the text
     x three buttons on the bottom (like tinder):
         x don't understand
         x partially understand
@@ -52,6 +52,7 @@ bottom bar should be:
         - make the understanding schema to allow these to be tracked
     x slide the screen down to see more videos
         x repeat
+        - when you leave the feed, the autoplay should stop, maybe just get paused (right now I hear the audio still playing)
         - forever (do infinite/random stuff)
         - some kind of find next video(s) function in firebase???
 
@@ -62,21 +63,19 @@ bottom bar should be:
 
 - classes
     - classes page
-        - three tabs:
-            - classes you are a creator of
-            - classes you are in
-            - discover public classes
+        x three tabs:
+            x classes you are a creator of
+            x classes you are in
+            x discover public classes
     - individually created
         - essentially a tailored algorithm that finds videos relevant to the topic (math, chem, etc)
-        - can be public or private
-
-            - either joinable or invitable
-    - when anyone whos part of the class opens it, it brings them to that video feed
-        - maybe one button to open, one is a big chat channel
+        x can be public or private
+            x either joinable or invitable
+            - invite to be implemented later
     - classes page:
-        - name, creator, description, join button
-        - can still see feed maybe?
-        - members list popout
+        x name, creator, description, join button
+        x video feed button
+        - members list popout (from member count)
             - curator first
             - then members
             - can click any member to go to their profile
