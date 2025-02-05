@@ -36,7 +36,7 @@ class _LoginFormState extends State<LoginForm> {
         );
         
         if (mounted) {
-          context.go('/home');
+          context.go('/');
         }
       } catch (e) {
         _showErrorMessage(e.toString());

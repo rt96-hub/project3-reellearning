@@ -21,6 +21,24 @@ x validate email is correct format
 - prevent login if email is not verified
 - validate phone number is correct format
 
+- on account creation
+    - account details input
+        - name
+        - bio
+        - pfp
+    - create a class (or skip to see everything)
+        - name
+        - description
+        - thumbnail
+        - public or private
+        - joinable or invitable
+    - how do we quickly determine the users interests/competencies?
+        - maybe a survey?
+            - dynamic, what subjects are you interested in?
+                - select/enter math/history/chemistry/etc
+                - based on the subjects, we generate some further subtopics to select
+        
+
 
 bottom bar should be:
 - feed
@@ -126,8 +144,9 @@ x maybe include a search page
 
 
 - video features:
-    - play/pause videos with tap
+    x play/pause videos with tap
     - mute/unmute with icon at top left or right???
+        - save mute status between vids
     - double tap on the left or right quarter to skip back/forward x seconds
         - maybe double tap and hold to scrub???
     - video progress bar

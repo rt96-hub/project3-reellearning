@@ -19,6 +19,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final PageController _pageController = PageController();
   int _currentVideoIndex = 0;
   bool _showFullDescription = false;
+  bool _isMuted = false;
   
   @override
   void initState() {
@@ -71,6 +72,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     video: videos[index],
                     autoPlay: index == _currentVideoIndex,
                     looping: true,
+                    isMuted: _isMuted,
+                    onMuteChanged: (muted) => setState(() => _isMuted = muted),
                   ),
                 );
               },

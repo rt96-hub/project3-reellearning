@@ -6,12 +6,16 @@ class VideoPlayerWidget extends StatefulWidget {
   final VideoModel video;
   final bool autoPlay;
   final bool looping;
+  final bool isMuted;
+  final ValueChanged<bool> onMuteChanged;
 
   const VideoPlayerWidget({
     Key? key,
     required this.video,
     this.autoPlay = true,
     this.looping = true,
+    required this.isMuted,
+    required this.onMuteChanged,
   }) : super(key: key);
 
   @override
@@ -22,6 +26,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   VideoPlayerController? _controller;
   bool _isInitialized = false;
   String _debugInfo = 'Initializing...';
+  bool _showPlayPauseOverlay = false;
 
   @override
   void initState() {
@@ -68,6 +73,9 @@ Position: ${controller.value.position}
       debugPrint('Video size: ${controller.value.size}');
       debugPrint('Video duration: ${controller.value.duration}');
       
+      // Set initial volume based on isMuted prop
+      controller.setVolume(widget.isMuted ? 0 : 1);
+      
       if (widget.autoPlay) {
         controller.play();
       }
@@ -101,6 +109,41 @@ Position: ${controller.value.position}
   }
 
   @override
+  void didUpdateWidget(VideoPlayerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isMuted != widget.isMuted) {
+      _controller?.setVolume(widget.isMuted ? 0 : 1);
+    }
+  }
+
+  void _togglePlayPause() {
+    if (_controller == null) return;
+    
+    setState(() {
+      if (_controller!.value.isPlaying) {
+        _controller!.pause();
+      } else {
+        _controller!.play();
+      }
+      _showPlayPauseOverlay = true;
+    });
+
+    // Hide the overlay after a short delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _showPlayPauseOverlay = false;
+        });
+      }
+    });
+  }
+
+  void _toggleMute() {
+    if (_controller == null) return;
+    widget.onMuteChanged(!widget.isMuted);
+  }
+
+  @override
   void dispose() {
     _controller?.dispose();
     super.dispose();
@@ -110,14 +153,58 @@ Position: ${controller.value.position}
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        Center(
-          child: _isInitialized && _controller != null
-            ? AspectRatio(
-                aspectRatio: _controller!.value.aspectRatio,
-                child: VideoPlayer(_controller!),
-              )
-            : const CircularProgressIndicator(),
+        // Video Player with Tap Handler
+        GestureDetector(
+          onTap: _togglePlayPause,
+          child: Center(
+            child: _isInitialized && _controller != null
+              ? AspectRatio(
+                  aspectRatio: _controller!.value.aspectRatio,
+                  child: VideoPlayer(_controller!),
+                )
+              : const CircularProgressIndicator(),
+          ),
         ),
+
+        // Play/Pause Overlay
+        if (_showPlayPauseOverlay && _isInitialized && _controller != null)
+          Center(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.3),
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(12),
+              child: Icon(
+                _controller!.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                color: Colors.white,
+                size: 50,
+              ),
+            ),
+          ),
+
+        // Mute/Unmute Button
+        if (_isInitialized && _controller != null)
+          Positioned(
+            top: 16,
+            right: 16,
+            child: GestureDetector(
+              onTap: _toggleMute,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  widget.isMuted ? Icons.volume_off : Icons.volume_up,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            ),
+          ),
+
         // Debug Info Overlay
         Positioned(
           top: 40,
