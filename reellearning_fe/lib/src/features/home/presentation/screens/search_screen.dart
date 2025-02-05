@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:reellearning_fe/src/features/auth/data/providers/auth_provider.dart';
-import '../widgets/bottom_nav_bar.dart';
 
 class SearchScreen extends ConsumerWidget {
   const SearchScreen({super.key});
@@ -30,28 +28,6 @@ class SearchScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: BottomNavBar(
-        currentIndex: 2,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              context.go('/home');
-              break;
-            case 1:
-              context.go('/classes');
-              break;
-            case 2:
-              // Already on search
-              break;
-            case 3:
-              context.go('/messages');
-              break;
-            case 4:
-              context.go('/profile');
-              break;
-          }
-        },
       ),
     );
   }

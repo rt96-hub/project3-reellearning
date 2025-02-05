@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:reellearning_fe/src/features/auth/data/providers/auth_provider.dart';
-import '../widgets/bottom_nav_bar.dart';
 
 class ProfileScreen extends ConsumerWidget {
   final String? userId;
@@ -26,30 +25,6 @@ class ProfileScreen extends ConsumerWidget {
               userId: userIdToShow,
               isOwnProfile: isOwnProfile,
             ),
-      bottomNavigationBar: BottomNavBar(
-        currentIndex: 4,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              context.go('/home');
-              break;
-            case 1:
-              context.go('/classes');
-              break;
-            case 2:
-              context.go('/search');
-              break;
-            case 3:
-              context.go('/messages');
-              break;
-            case 4:
-              if (!isOwnProfile) {
-                context.go('/profile');
-              }
-              break;
-          }
-        },
-      ),
     );
   }
 }

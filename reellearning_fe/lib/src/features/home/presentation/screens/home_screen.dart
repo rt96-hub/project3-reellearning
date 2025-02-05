@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:reellearning_fe/src/features/auth/data/providers/auth_provider.dart';
 import 'package:reellearning_fe/src/features/videos/data/providers/video_provider.dart';
 import 'package:reellearning_fe/src/features/videos/presentation/widgets/video_player_widget.dart';
-import '../widgets/bottom_nav_bar.dart';
 import '../widgets/video_action_buttons.dart';
 import '../widgets/video_understanding_buttons.dart';
 
@@ -18,7 +16,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final PageController _pageController = PageController();
   int _currentVideoIndex = 0;
-  int _currentNavIndex = 0;
   bool _showFullDescription = false;
   
   @override
@@ -48,28 +45,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (videos.length - newIndex <= 2) {
         ref.read(paginatedVideoProvider.notifier).loadMore();
       }
-    }
-  }
-
-  void _onTabTapped(int index) {
-    setState(() => _currentNavIndex = index);
-    
-    switch (index) {
-      case 0:
-        context.go('/home');
-        break;
-      case 1:
-        context.go('/classes');
-        break;
-      case 2:
-        context.go('/search');
-        break;
-      case 3:
-        context.go('/messages');
-        break;
-      case 4:
-        context.go('/profile');
-        break;
     }
   }
 
@@ -171,17 +146,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   videoId: videos[_currentVideoIndex].id,
                   likeCount: videos[_currentVideoIndex].engagement.likes,
                 ),
-          ),
-
-          // Bottom Navigation Bar
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: BottomNavBar(
-              currentIndex: _currentNavIndex,
-              onTap: _onTabTapped,
-            ),
           ),
         ],
       ),

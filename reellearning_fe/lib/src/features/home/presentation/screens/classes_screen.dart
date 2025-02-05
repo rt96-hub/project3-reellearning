@@ -6,7 +6,6 @@ import 'package:reellearning_fe/src/features/auth/data/providers/auth_provider.d
 import 'package:reellearning_fe/src/features/auth/data/providers/user_provider.dart';
 import '../../data/models/class_model.dart';
 import '../../data/providers/class_provider.dart';
-import '../widgets/bottom_nav_bar.dart';
 
 class ClassesScreen extends ConsumerStatefulWidget {
   const ClassesScreen({super.key});
@@ -142,28 +141,6 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> with SingleTicker
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: BottomNavBar(
-        currentIndex: 1,
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              context.go('/home');
-              break;
-            case 1:
-              // Already on classes
-              break;
-            case 2:
-              context.go('/search');
-              break;
-            case 3:
-              context.go('/messages');
-              break;
-            case 4:
-              context.go('/profile');
-              break;
-          }
-        },
       ),
     );
   }
