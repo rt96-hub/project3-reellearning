@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:reellearning_fe/src/features/auth/data/providers/auth_provider.dart';
 import 'package:reellearning_fe/src/features/videos/data/providers/video_provider.dart';
 import 'package:reellearning_fe/src/features/videos/presentation/widgets/video_player_widget.dart';
@@ -89,10 +91,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // User Avatar
-                        const CircleAvatar(
-                          radius: 20,
-                          backgroundImage: AssetImage('assets/placeholder.png'),
+                        // User Avatar and Profile Section
+                        StreamBuilder<DocumentSnapshot>(
+                          stream: (videos[_currentVideoIndex].creator as DocumentReference).snapshots(),
+                          builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+                            if (!snapshot.hasData) {
+                              return const CircleAvatar(
+                                radius: 20,
+                                child: Icon(Icons.person),
+                              );
+                            }
+
+                            final userData = snapshot.data!.data() as Map<String, dynamic>;
+                            final profile = userData['profile'] as Map<String, dynamic>? ?? {};
+                            final creatorId = snapshot.data!.id;
+
+                            return GestureDetector(
+                              onTap: () => context.go('/profile/$creatorId'),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 20,
+                                    backgroundImage: profile['avatarUrl'] != null
+                                        ? NetworkImage(profile['avatarUrl'])
+                                        : null,
+                                    child: profile['avatarUrl'] == null
+                                        ? const Icon(Icons.person)
+                                        : null,
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
                         const SizedBox(width: 12),
                         // Video Info
@@ -106,6 +137,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
+                              ),
+                              const SizedBox(height: 4),
+                              // Creator Name
+                              StreamBuilder<DocumentSnapshot>(
+                                stream: (videos[_currentVideoIndex].creator as DocumentReference).snapshots(),
+                                builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+                                  if (!snapshot.hasData) {
+                                    return const SizedBox.shrink();
+                                  }
+
+                                  final userData = snapshot.data!.data() as Map<String, dynamic>;
+                                  final profile = userData['profile'] as Map<String, dynamic>? ?? {};
+                                  final creatorId = snapshot.data!.id;
+
+                                  return GestureDetector(
+                                    onTap: () => context.go('/profile/$creatorId'),
+                                    child: Text(
+                                      profile['displayName'] ?? 'Unknown User',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w500,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                               const SizedBox(height: 4),
                               GestureDetector(

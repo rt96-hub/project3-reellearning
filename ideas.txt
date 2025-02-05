@@ -119,6 +119,8 @@ x maybe include a search page
     - user created videos (from any users profile/video page)
     - class bookmarked videos
 
+- going back to the home screen doesnt reset the feed
+
 - different video formats??
     - mp4
     - webm
