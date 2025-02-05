@@ -27,6 +27,8 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   bool _isInitialized = false;
   String _debugInfo = 'Initializing...';
   bool _showPlayPauseOverlay = false;
+  bool _showSeekOverlay = false;
+  String _seekDirection = '';
 
   @override
   void initState() {
@@ -143,6 +145,42 @@ Position: ${controller.value.position}
     widget.onMuteChanged(!widget.isMuted);
   }
 
+  void _handleDoubleTapDown(TapDownDetails details, BuildContext context) {
+    if (_controller == null) return;
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final tapPosition = details.globalPosition.dx;
+    final seekDuration = const Duration(seconds: 5);
+
+    // Left 1/3 of the screen
+    if (tapPosition < screenWidth / 3) {
+      final newPosition = _controller!.value.position - seekDuration;
+      _controller!.seekTo(newPosition);
+      setState(() {
+        _showSeekOverlay = true;
+        _seekDirection = 'backward';
+      });
+    }
+    // Right 1/3 of the screen
+    else if (tapPosition > (screenWidth * 2 / 3)) {
+      final newPosition = _controller!.value.position + seekDuration;
+      _controller!.seekTo(newPosition);
+      setState(() {
+        _showSeekOverlay = true;
+        _seekDirection = 'forward';
+      });
+    }
+
+    // Hide the overlay after a short delay
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _showSeekOverlay = false;
+        });
+      }
+    });
+  }
+
   @override
   void dispose() {
     _controller?.dispose();
@@ -153,9 +191,11 @@ Position: ${controller.value.position}
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Video Player with Tap Handler
+        // Video Player with Tap Handlers
         GestureDetector(
           onTap: _togglePlayPause,
+          onDoubleTapDown: (details) => _handleDoubleTapDown(details, context),
+          behavior: HitTestBehavior.opaque,
           child: Center(
             child: _isInitialized && _controller != null
               ? AspectRatio(
@@ -165,6 +205,26 @@ Position: ${controller.value.position}
               : const CircularProgressIndicator(),
           ),
         ),
+
+        // Seek Overlay
+        if (_showSeekOverlay && _isInitialized && _controller != null)
+          Positioned(
+            left: _seekDirection == 'backward' ? 32 : null,
+            right: _seekDirection == 'forward' ? 32 : null,
+            top: MediaQuery.of(context).size.height / 2 - 25,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.3),
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(12),
+              child: Icon(
+                _seekDirection == 'forward' ? Icons.forward_5 : Icons.replay_5,
+                color: Colors.white,
+                size: 50,
+              ),
+            ),
+          ),
 
         // Play/Pause Overlay
         if (_showPlayPauseOverlay && _isInitialized && _controller != null)

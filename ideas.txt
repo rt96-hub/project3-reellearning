@@ -145,8 +145,8 @@ x maybe include a search page
 
 - video features:
     x play/pause videos with tap
-    - mute/unmute with icon at top left or right???
-        - save mute status between vids
+    x mute/unmute with icon at top left or right???
+        x save mute status between vids
     - double tap on the left or right quarter to skip back/forward x seconds
         - maybe double tap and hold to scrub???
     - video progress bar
