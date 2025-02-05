@@ -1,17 +1,19 @@
 // Users Collection
 users: {
   userId: {
+    createdAt: Timestamp,
+    email: String,
+    phone: String,
     profile: {
       displayName: String,
-      email: String,
       avatarUrl: String,
       biography: String,
-      joinedAt: Timestamp,
-      lastActive: Timestamp
     },
-    }
+    uid: String,
   }
 }
+
+
 
 // Videos Collection
 videos: {
@@ -193,14 +195,13 @@ classMessageReplies: {
 classes: {
   classId: {
     creator: Reference,  // Reference to users collection
-    metadata: {
-      title: String,
-      description: String,
-      createdAt: Timestamp,
-      updatedAt: Timestamp,
-      isPublic: Boolean,
-      thumbnail: String
-    },
+    title: String,
+    description: String,
+    createdAt: Timestamp,
+    updatedAt: Timestamp,
+    isPublic: Boolean,
+    thumbnail: String,
+    memberCount: Number,
   }
 }
 
@@ -226,27 +227,7 @@ classMembership: {
     userId: Reference,
     classId: Reference,
     joinedAt: Timestamp,
-    lastActive: Timestamp,
-    role: String,  // 'creator', 'follower'
-    personalizedState: {
-      conceptualProgress: Map<String, {
-        exposure: Number,
-        understanding: Number,
-        lastEncounter: Timestamp
-      }>,
-      currentDifficulty: Number,
-      recommendationContext: {
-        lastVideos: Array<String>,
-        strongestConcepts: Array<String>,
-        challengingConcepts: Array<String>
-      }
-    },
-    engagementMetrics: {
-      videosWatched: Number,
-      averageCompletion: Number,
-      understandingRate: Number,
-      streakDays: Number
-    }
+    role: String,  // 'curator', 'follower'
   }
 }
 
@@ -256,9 +237,10 @@ userBookmarks: {
   userId_videoId: {
     userId: Reference,
     videoId: Reference,
-    classId: Reference,  // Optional, if bookmarked within a class
+    classId: Reference,  // Optional, if bookmarked within a class, probably need some kind of index to make this faster when looking up by the classId
     addedAt: Timestamp,
     notes: String
+
   }
 }
 

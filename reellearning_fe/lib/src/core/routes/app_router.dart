@@ -8,6 +8,8 @@ import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/home/presentation/screens/profile_screen.dart';
 import '../../features/home/presentation/screens/messages_screen.dart';
 import '../../features/home/presentation/screens/classes_screen.dart';
+import '../../features/home/presentation/screens/class_detail_screen.dart';
+import '../../features/home/presentation/screens/create_class_screen.dart';
 import '../../features/home/presentation/screens/search_screen.dart';
 
 // TODO: Implement router configuration
@@ -56,6 +58,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/classes',
         builder: (context, state) => const ClassesScreen(),
+      ),
+      GoRoute(
+        path: '/classes/new',
+        builder: (context, state) => const CreateClassScreen(),
+      ),
+      GoRoute(
+        path: '/classes/:classId',
+        builder: (context, state) => ClassDetailScreen(
+          classId: state.pathParameters['classId']!,
+        ),
       ),
       GoRoute(
         path: '/search',

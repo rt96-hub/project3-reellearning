@@ -82,6 +82,39 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // Classes collection rules
+    match /classes/{classId} {
+      // Anyone can read class documents
+      allow read: if true;
+      
+      // Only authenticated users can create classes
+      allow create: if isAuthenticated();
+      
+      // Allow class creator to update/delete their classes
+      // Also allow updating memberCount by any authenticated user
+      allow update: if isAuthenticated() && 
+                   (
+                     request.auth.uid == resource.data.creator.id ||
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount'])
+                   );
+      
+      allow delete: if isAuthenticated() && 
+                   request.auth.uid == resource.data.creator.id;
+    }
+
+    // Class Membership collection rules
+    match /classMembership/{membershipId} {
+      // Anyone can read class membership
+      allow read: if true;
+      
+      // Any authenticated user can create a membership
+      allow create: if isAuthenticated();
+      
+      // Only the user referenced in the document can update or delete their membership
+      allow update, delete: if isAuthenticated() &&
+                          resource.data.userId.id == request.auth.uid;
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;
