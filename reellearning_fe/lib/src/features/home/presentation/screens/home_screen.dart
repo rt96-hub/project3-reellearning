@@ -4,9 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:reellearning_fe/src/features/auth/data/providers/auth_provider.dart';
 import 'package:reellearning_fe/src/features/videos/data/providers/video_provider.dart';
+import 'package:reellearning_fe/src/features/videos/data/providers/video_state_provider.dart';
 import 'package:reellearning_fe/src/features/videos/presentation/widgets/video_player_widget.dart';
 import '../widgets/video_action_buttons.dart';
 import '../widgets/video_understanding_buttons.dart';
+
+// Add this provider at the top of the file with other providers
+final currentVideoIndexProvider = StateProvider<int>((ref) => 0);
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -17,7 +21,6 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final PageController _pageController = PageController();
-  int _currentVideoIndex = 0;
   bool _showFullDescription = false;
   bool _isMuted = false;
 
@@ -41,14 +44,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
 
     final newIndex = _pageController.page?.round() ?? 0;
-    if (newIndex != _currentVideoIndex) {
-      setState(() => _currentVideoIndex = newIndex);
+    // Update the current video index in the provider
+    ref.read(currentVideoIndexProvider.notifier).state = newIndex;
 
-      // Check if we need to load more videos
-      final videos = ref.read(paginatedVideoProvider);
-      if (videos.length - newIndex <= 2) {
-        ref.read(paginatedVideoProvider.notifier).loadMore();
-      }
+    // Check if we need to load more videos
+    final videos = ref.read(paginatedVideoProvider);
+    if (videos.length - newIndex <= 2) {
+      ref.read(paginatedVideoProvider.notifier).loadMore();
     }
   }
 
@@ -56,6 +58,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final videos = ref.watch(paginatedVideoProvider);
     final userProfile = ref.watch(currentUserProvider);
+    final currentIndex = ref.watch(currentVideoIndexProvider);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -71,7 +74,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 return Center(
                   child: VideoPlayerWidget(
                     video: videos[index],
-                    autoPlay: index == _currentVideoIndex,
+                    autoPlay: index == currentIndex,
                     looping: true,
                     isMuted: _isMuted,
                     onMuteChanged: (muted) => setState(() => _isMuted = muted),
@@ -97,7 +100,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           children: [
                             // User Avatar and Profile Section
                             StreamBuilder<DocumentSnapshot>(
-                              stream: (videos[_currentVideoIndex].creator
+                              stream: (videos[currentIndex].creator
                                       as DocumentReference)
                                   .snapshots(),
                               builder: (context,
@@ -144,7 +147,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    videos[_currentVideoIndex].title,
+                                    videos[currentIndex].title,
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
@@ -153,7 +156,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   const SizedBox(height: 4),
                                   // Creator Name
                                   StreamBuilder<DocumentSnapshot>(
-                                    stream: (videos[_currentVideoIndex].creator
+                                    stream: (videos[currentIndex].creator
                                             as DocumentReference)
                                         .snapshots(),
                                     builder: (context,
@@ -194,7 +197,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       });
                                     },
                                     child: Text(
-                                      videos[_currentVideoIndex].description,
+                                      videos[currentIndex].description,
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 14,
@@ -212,7 +215,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         const SizedBox(height: 16),
                         VideoUnderstandingButtons(
-                          videoId: videos[_currentVideoIndex].id,
+                          videoId: videos[currentIndex].id,
                           // at some point we will pass classId here (if we create a separate class feed file we need to look at it)
                         ),
                       ],
@@ -227,8 +230,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             child: videos.isEmpty
                 ? const SizedBox()
                 : VideoActionButtons(
-                    videoId: videos[_currentVideoIndex].id,
-                    likeCount: videos[_currentVideoIndex].engagement.likes,
+                    videoId: videos[currentIndex].id,
+                    likeCount: videos[currentIndex].engagement.likes,
                   ),
           ),
         ],

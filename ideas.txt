@@ -38,12 +38,15 @@ x on account creation
 
 - make sure 5 videos are not LOADING at once, just that we get the queue for 5
     x need to write some kind of function that will generate a recommended queue of x videos, along with a userId parameter/classId parameter
-        - frontend can determine how many it needs to ask for, and pass the context of the user or class
-        - backend will generate the queue
-        - frontend will append the queue to the existing feed
+        ? frontend can determine how many it needs to ask for, and pass the context of the user or class
+        x backend will generate the next x videos
+        x frontend will append the videos to the queue
+        - drop the first videos after we get 50 through the queue or something? so theres never more than 55 in the total queue?
         - how do we track if a video has been watched??
         - only have so many videos downloaded/cached at once
             - download the first video in full, the second and third like 20% or something, or even first x seconds of the video
+            - preload x seconds of the videos 2 above and below maybe??
+            - how does streaming work, where we download as we watch it?
 
 x The user's login info/status needs to be stored on the device so they can be logged in when they reopen
 x implement the back drag gesture for navigation(maybe not)

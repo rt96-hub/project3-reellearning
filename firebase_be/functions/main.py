@@ -44,6 +44,16 @@ import random
 
 initialize_app()
 
+# Helper function to safely get creator path
+def get_creator_path(data):
+    try:
+        creator = data.get('creator')
+        if creator and hasattr(creator, 'path'):
+            return creator.path
+    except Exception as e:
+        print(f"Error getting creator path: {e}")
+    return 'users/unknown'
+
 @https_fn.on_request()
 def get_videos(req: https_fn.Request) -> https_fn.Response:
     # Get number of videos requested (default: 10)
@@ -105,10 +115,13 @@ def get_videos(req: https_fn.Request) -> https_fn.Response:
                     
                 data = doc.to_dict()
                 metadata = data.get('metadata', {})
-                engagement = data.get('engagement', {'views': 0, 'likes': 0})
-                
-                # TODO: In production, transform video URLs to closest CDN edge
-                # video_url = get_cdn_url(metadata.get('videoUrl', ''), user_region)
+                engagement = data.get('engagement', {
+                    'views': 0,
+                    'likes': 0,
+                    'shares': 0,
+                    'completionRate': 0.0,
+                    'averageWatchTime': 0.0
+                })
                 
                 video = {
                     'id': doc.id,
@@ -119,8 +132,17 @@ def get_videos(req: https_fn.Request) -> https_fn.Response:
                     'duration': float(metadata.get('duration', 0)),
                     'uploadedAt': metadata.get('uploadedAt', datetime.now()).isoformat(),
                     'updatedAt': metadata.get('updatedAt', datetime.now()).isoformat(),
-                    'creator': str(data.get('creator', 'users/unknown')),
-                    'engagement': engagement
+                    'creator': {
+                        'path': get_creator_path(data),
+                        'type': 'documentReference'
+                    },
+                    'engagement': {
+                        'views': engagement.get('views', 0),
+                        'likes': engagement.get('likes', 0),
+                        'shares': engagement.get('shares', 0),
+                        'completionRate': float(engagement.get('completionRate', 0)),
+                        'averageWatchTime': float(engagement.get('averageWatchTime', 0))
+                    }
                 }
                 videos.append(video)
                 remaining_limit -= 1
@@ -136,7 +158,13 @@ def get_videos(req: https_fn.Request) -> https_fn.Response:
             for doc in remaining_docs:
                 data = doc.to_dict()
                 metadata = data.get('metadata', {})
-                engagement = data.get('engagement', {'views': 0, 'likes': 0})
+                engagement = data.get('engagement', {
+                    'views': 0,
+                    'likes': 0,
+                    'shares': 0,
+                    'completionRate': 0.0,
+                    'averageWatchTime': 0.0
+                })
                 
                 video = {
                     'id': doc.id,
@@ -147,8 +175,17 @@ def get_videos(req: https_fn.Request) -> https_fn.Response:
                     'duration': float(metadata.get('duration', 0)),
                     'uploadedAt': metadata.get('uploadedAt', datetime.now()).isoformat(),
                     'updatedAt': metadata.get('updatedAt', datetime.now()).isoformat(),
-                    'creator': str(data.get('creator', 'users/unknown')),
-                    'engagement': engagement
+                    'creator': {
+                        'path': get_creator_path(data),
+                        'type': 'documentReference'
+                    },
+                    'engagement': {
+                        'views': engagement.get('views', 0),
+                        'likes': engagement.get('likes', 0),
+                        'shares': engagement.get('shares', 0),
+                        'completionRate': float(engagement.get('completionRate', 0)),
+                        'averageWatchTime': float(engagement.get('averageWatchTime', 0))
+                    }
                 }
                 videos.append(video)
     

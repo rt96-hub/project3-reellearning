@@ -1,7 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/video_model.dart';
+import 'package:http/http.dart' as http;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../models/video_model.dart';
+import './video_state_provider.dart';
 
 final videoProvider = StreamProvider.autoDispose((ref) {
   return FirebaseFirestore.instance
@@ -83,58 +86,109 @@ Future<String> getVideoUrl(String videoPath) async {
 }
 
 class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
-  PaginatedVideoNotifier() : super([]) {
-    _fetchNextBatch();  // Enable Firebase fetching
-    // _loadLocalVideos();  // Comment out local video loading
+  PaginatedVideoNotifier(this.ref) : super([]) {
+    _fetchNextBatch();
   }
 
-  // Comment out local video loading function
-  /*
-  void _loadLocalVideos() {
-    state = [
-      VideoModel.local(id: 'local_1', title: 'Sample Video 1'),
-      VideoModel.local(id: 'local_2', title: 'Sample Video 2'),
-    ];
-  }
-  */
-
-  DocumentSnapshot? _lastDoc;
-  bool _hasMore = true;
-  final int _limit = 5;
+  final Ref ref;
+  bool _isLoading = false;
+  final int _batchSize = 5;
+  static const int _maxQueueSize = 50;  // Maximum number of videos to keep in queue
+  
+  // TODO: Move this to a configuration file
+  static const String _functionUrl = 'https://us-central1-reellearning-prj3.cloudfunctions.net/get_videos';
 
   Future<void> _fetchNextBatch() async {
-    if (!_hasMore) return;
-
-    // This is probably where we need to select "random" videos
-    Query collectionQuery = FirebaseFirestore.instance.collection('videos').orderBy('metadata.uploadedAt', descending: true).limit(_limit);
-
-    if (_lastDoc != null) {
-      collectionQuery = collectionQuery.startAfterDocument(_lastDoc!);
-    }
-
-    final querySnapshot = await collectionQuery.get();
-    if (querySnapshot.docs.isNotEmpty) {
-      _lastDoc = querySnapshot.docs.last;
-      final videos = querySnapshot.docs.map((doc) {
-        final data = doc.data();
-        print('Raw video data for ${doc.id}: $data'); // Debug log
-        final engagement = (data as Map<String, dynamic>)['engagement'];
-        print('Engagement data: $engagement'); // Debug engagement data
-        return VideoModel.fromFirestore(doc);
-      }).toList();
-      state = [...state, ...videos];
-      if (videos.length < _limit) _hasMore = false;
-    } else {
-      _hasMore = false;
+    if (_isLoading) return;
+    
+    try {
+      _isLoading = true;
+      
+      // Make request to our cloud function
+      final response = await http.get(
+        Uri.parse('$_functionUrl?limit=$_batchSize'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final videos = (data['videos'] as List).map((videoJson) async {
+          // If the video URL is a gs:// URL, convert it to a download URL
+          String videoUrl = videoJson['videoUrl'];
+          if (videoUrl.startsWith('gs://')) {
+            videoUrl = await getVideoUrl(videoUrl);
+          }
+          
+          final engagement = videoJson['engagement'] as Map<String, dynamic>;
+          final creatorData = videoJson['creator'] as Map<String, dynamic>;
+          
+          // Create a valid Firestore document reference
+          DocumentReference creatorRef;
+          try {
+            var creatorPath = creatorData['path'] as String;
+            // Remove any leading or trailing slashes and spaces
+            creatorPath = creatorPath.trim().replaceAll(RegExp(r'^/+|/+$'), '');
+            creatorRef = FirebaseFirestore.instance.doc(creatorPath);
+          } catch (e) {
+            // If there's any issue, fallback to a default user reference
+            creatorRef = FirebaseFirestore.instance.doc('users/unknown');
+            print('Error creating creator reference: $e');
+          }
+          
+          return VideoModel(
+            id: videoJson['id'],
+            title: videoJson['title'],
+            description: videoJson['description'],
+            videoUrl: videoUrl,
+            thumbnailUrl: videoJson['thumbnailUrl'],
+            duration: videoJson['duration'].toDouble(),
+            uploadedAt: DateTime.parse(videoJson['uploadedAt']),
+            updatedAt: DateTime.parse(videoJson['updatedAt']),
+            creator: creatorRef,
+            engagement: VideoEngagement(
+              views: engagement['views'] ?? 0,
+              likes: engagement['likes'] ?? 0,
+              shares: engagement['shares'] ?? 0,
+              completionRate: (engagement['completionRate'] ?? 0).toDouble(),
+              averageWatchTime: (engagement['averageWatchTime'] ?? 0).toDouble(),
+            ),
+          );
+        }).toList();
+        
+        // Wait for all video URL conversions to complete
+        final resolvedVideos = await Future.wait(videos);
+        
+        if (state.length >= _maxQueueSize) {
+          // Remove oldest batch of videos when adding new ones
+          state = [...state.sublist(_batchSize), ...resolvedVideos];
+        } else {
+          state = [...state, ...resolvedVideos];
+        }
+      } else {
+        print('Error fetching videos: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching videos: $e');
+    } finally {
+      _isLoading = false;
     }
   }
 
-  // This can be called externally when the user nears the end.
+  // Helper method to get current video index
+  int _getCurrentVideoIndex() {
+    return ref.read(currentVideoIndexProvider);
+  }
+
   Future<void> loadMore() async {
+    await _fetchNextBatch();
+  }
+  
+  Future<void> refresh() async {
+    state = [];
     await _fetchNextBatch();
   }
 }
 
 final paginatedVideoProvider = StateNotifierProvider<PaginatedVideoNotifier, List<VideoModel>>(
-  (ref) => PaginatedVideoNotifier(),
+  (ref) => PaginatedVideoNotifier(ref),
 ); 

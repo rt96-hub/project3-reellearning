@@ -72,12 +72,13 @@ migrate_working_dir/
 old_frontend/
 docs_ignore/
 0sample_videos/
-
+1sample_videos/
 
 serviceAccountKey.json
 flutter_*.png
 *.mp4
 *.webm
+
 
 venv/
 
