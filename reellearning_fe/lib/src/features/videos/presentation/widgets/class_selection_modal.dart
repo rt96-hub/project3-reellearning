@@ -285,88 +285,10 @@ class _ClassSelectionModalState extends ConsumerState<ClassSelectionModal> {
 
                   final memberships = snapshot.data!.docs;
 
-                  if (memberships.isEmpty) {
-                    return const Center(
-                      child: Text('Not a member of any classes'),
-                    );
-                  }
-
                   return SingleChildScrollView(
                     child: Column(
                       children: [
-                        DataTable(
-                          columns: const [
-                            DataColumn(
-                              label: SizedBox(width: 48),
-                            ),
-                            DataColumn(label: Text('Class')),
-                          ],
-                          rows: List.generate(
-                            memberships.where((doc) {
-                              final membership = doc.data() as Map<String, dynamic>;
-                              return membership['role'] == 'curator';
-                            }).length,
-                            (index) {
-                              final curatorMemberships = memberships.where((doc) {
-                                final membership = doc.data() as Map<String, dynamic>;
-                                return membership['role'] == 'curator';
-                              }).toList();
-                              
-                              final membership = curatorMemberships[index].data() as Map<String, dynamic>;
-                              final classRef = membership['classId'] as DocumentReference;
-
-                              return DataRow(
-                                cells: [
-                                  DataCell(
-                                    IconButton(
-                                      icon: Icon(
-                                        widget.interactionType == InteractionType.like
-                                            ? (selectedClassIds.contains(classRef.id) ? Icons.favorite : Icons.favorite_border)
-                                            : (selectedClassIds.contains(classRef.id) ? Icons.bookmark : Icons.bookmark_border),
-                                        color: widget.interactionType == InteractionType.like && selectedClassIds.contains(classRef.id)
-                                            ? Colors.red
-                                            : null,
-                                      ),
-                                      onPressed: loadingClassId == classRef.id ? null : () => _handleInteractionToggle(classRef.id),
-                                    ),
-                                  ),
-                                  DataCell(
-                                    FutureBuilder<DocumentSnapshot>(
-                                      future: classRef.get(),
-                                      builder: (context, AsyncSnapshot<DocumentSnapshot> classSnapshot) {
-                                        if (!classSnapshot.hasData) {
-                                          return const Text('Loading...');
-                                        }
-
-                                        final classData = classSnapshot.data!.data() as Map<String, dynamic>;
-                                        return Row(
-                                          children: [
-                                            if (classData['thumbnail'] != null && classData['thumbnail'].isNotEmpty)
-                                              CircleAvatar(
-                                                backgroundImage: NetworkImage(classData['thumbnail']),
-                                                radius: 16,
-                                              )
-                                            else
-                                              const CircleAvatar(
-                                                child: Icon(Icons.class_),
-                                                radius: 16,
-                                              ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Text(classData['title'] ?? 'Unnamed Class'),
-                                            ),
-                                          ],
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
-                        ),
-                        const Divider(height: 32),
-                        // Personal Feed Row
+                        // Personal Feed Row - Moved to top and always visible
                         ListTile(
                           leading: IconButton(
                             icon: Icon(
@@ -380,8 +302,75 @@ class _ClassSelectionModalState extends ConsumerState<ClassSelectionModal> {
                             onPressed: isPersonalFeedLoading ? null : _handlePersonalFeedToggle,
                           ),
                           title: const Text('Personal Feed'),
-                          subtitle: const Text('Like without class context'),
+                          subtitle: Text(
+                            widget.interactionType == InteractionType.like
+                                ? 'Like without class context'
+                                : 'Bookmark without class context'
+                          ),
                         ),
+                        if (memberships.isNotEmpty) ...[
+                          const Divider(height: 32),
+                          ...memberships.where((doc) {
+                            final membership = doc.data() as Map<String, dynamic>;
+                            return membership['role'] == 'curator';
+                          }).map((doc) {
+                            final membership = doc.data() as Map<String, dynamic>;
+                            final classRef = membership['classId'] as DocumentReference;
+                            
+                            return FutureBuilder<DocumentSnapshot>(
+                              future: classRef.get(),
+                              builder: (context, AsyncSnapshot<DocumentSnapshot> classSnapshot) {
+                                if (!classSnapshot.hasData) {
+                                  return const ListTile(
+                                    leading: SizedBox(
+                                      width: 48,
+                                      child: Center(child: CircularProgressIndicator()),
+                                    ),
+                                    title: Text('Loading...'),
+                                  );
+                                }
+
+                                final classData = classSnapshot.data!.data() as Map<String, dynamic>;
+                                return ListTile(
+                                  leading: IconButton(
+                                    icon: Icon(
+                                      widget.interactionType == InteractionType.like
+                                          ? (selectedClassIds.contains(classRef.id) ? Icons.favorite : Icons.favorite_border)
+                                          : (selectedClassIds.contains(classRef.id) ? Icons.bookmark : Icons.bookmark_border),
+                                      color: widget.interactionType == InteractionType.like && selectedClassIds.contains(classRef.id)
+                                          ? Colors.red
+                                          : null,
+                                    ),
+                                    onPressed: loadingClassId == classRef.id ? null : () => _handleInteractionToggle(classRef.id),
+                                  ),
+                                  title: Row(
+                                    children: [
+                                      if (classData['thumbnail'] != null && classData['thumbnail'].isNotEmpty)
+                                        CircleAvatar(
+                                          backgroundImage: NetworkImage(classData['thumbnail']),
+                                          radius: 16,
+                                        )
+                                      else
+                                        const CircleAvatar(
+                                          child: Icon(Icons.class_),
+                                          radius: 16,
+                                        ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(classData['title'] ?? 'Unnamed Class'),
+                                      ),
+                                    ],
+                                  ),
+                                  subtitle: Text(
+                                    widget.interactionType == InteractionType.like
+                                        ? 'Like for this class'
+                                        : 'Bookmark for this class'
+                                  ),
+                                );
+                              },
+                            );
+                          }).toList(),
+                        ],
                       ],
                     ),
                   );

@@ -48,8 +48,8 @@ x The user's login info/status needs to be stored on the device so they can be l
 x implement the back drag gesture for navigation(maybe not)
 - when the app is minimized, it stays on the page when they reopen
 
-- like and bookmark should work if they dont have a class!!!!!!
-    - right now it doesn't show the personal feed option if they are in no classes (just no classes at all, if they are a member of a class, they dont see the regular class record(which is correct) but they still see the personal feed option)
+x like and bookmark should work if they dont have a class!!!!!!
+    x right now it doesn't show the personal feed option if they are in no classes (just no classes at all, if they are a member of a class, they dont see the regular class record(which is correct) but they still see the personal feed option)
         
 
 
