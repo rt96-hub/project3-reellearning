@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/data/providers/auth_provider.dart';
+import '../../features/onboarding/data/providers/onboarding_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/signup_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
@@ -15,6 +16,8 @@ import '../../features/home/presentation/screens/search_screen.dart';
 import '../../features/home/presentation/screens/class_members_screen.dart';
 import '../../features/home/presentation/screens/user_classes_screen.dart';
 import '../../features/home/presentation/screens/settings_screen.dart';
+import '../../features/onboarding/presentation/screens/onboarding_profile_screen.dart';
+import '../../features/onboarding/presentation/screens/interests_screen.dart';
 import '../widgets/shell_scaffold.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -24,6 +27,7 @@ final _classesNavigatorKey = GlobalKey<NavigatorState>();
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
+  final onboardingCompleted = ref.watch(onboardingCompletedProvider);
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
@@ -32,12 +36,36 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoggedIn = authState.value != null;
       final isGoingToAuth = state.matchedLocation == '/login' || 
                            state.matchedLocation == '/signup';
+      
+      // Handle loading and error states
+      final isOnboardingCompleted = onboardingCompleted.when(
+        data: (value) => value,
+        loading: () => false,
+        error: (_, __) => false,
+      );
+      
+      final isGoingToOnboarding = state.matchedLocation.startsWith('/onboarding');
 
+      // Not logged in - redirect to login
       if (!isLoggedIn && !isGoingToAuth) {
         return '/login';
       }
 
+      // Logged in but trying to access auth pages - redirect to home
       if (isLoggedIn && isGoingToAuth) {
+        if (!isOnboardingCompleted) {
+          return '/onboarding/profile';
+        }
+        return '/';
+      }
+
+      // Logged in but onboarding not completed - redirect to onboarding
+      if (isLoggedIn && !isOnboardingCompleted && !isGoingToOnboarding) {
+        return '/onboarding/profile';
+      }
+
+      // Onboarding completed but trying to access onboarding pages - redirect to home
+      if (isLoggedIn && isOnboardingCompleted && isGoingToOnboarding) {
         return '/';
       }
 
@@ -51,6 +79,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/signup',
         builder: (context, state) => const SignupScreen(),
+      ),
+      // Onboarding routes
+      GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingProfileScreen(),
+        routes: [
+          GoRoute(
+            path: 'profile',
+            builder: (context, state) => const OnboardingProfileScreen(),
+          ),
+          GoRoute(
+            path: 'interests',
+            builder: (context, state) => const InterestsScreen(),
+          ),
+        ],
       ),
       // Root shell route for main navigation
       ShellRoute(

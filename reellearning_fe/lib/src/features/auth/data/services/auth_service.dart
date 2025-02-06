@@ -95,6 +95,7 @@ class AuthService {
             'email': email,
             'phone': phone,
             'createdAt': Timestamp.now(),
+            'onboardingCompleted': false,
             'profile': {
               'displayName': email.split('@')[0],
               'avatarUrl': '',

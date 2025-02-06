@@ -15,7 +15,7 @@ x validate email is correct format
 x login signup page titles
 x add email verification
 x prevent login if email is not verified
-- validate phone number is correct format
+x validate phone number is correct format
 - on account creation
     - account details input
         - name
