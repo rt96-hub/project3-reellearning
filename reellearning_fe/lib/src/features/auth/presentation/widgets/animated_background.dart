@@ -59,7 +59,7 @@ class _AnimatedBackgroundState extends State<AnimatedBackground> {
   }
 }
 
-class SymbolWidget extends StatelessWidget {
+class SymbolWidget extends StatefulWidget {
   final String symbol;
   final int index;
   final bool reverse;
@@ -76,45 +76,95 @@ class SymbolWidget extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final startPosition = reverse 
-        ? screenWidth + (startOffset * screenWidth)
-        : -300 - (startOffset * screenWidth);
-    final endPosition = reverse
-        ? -300 - (startOffset * screenWidth)
-        : screenWidth + (startOffset * screenWidth);
+  State<SymbolWidget> createState() => _SymbolWidgetState();
+}
+
+class _SymbolWidgetState extends State<SymbolWidget> with TickerProviderStateMixin {
+  late final AnimationController _positionController;
+  late final Animation<double> _positionAnimation;
+  late final AnimationController _opacityController;
+  late final Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
     
-    return CustomAnimationBuilder<double>(
-      tween: Tween<double>(
-        begin: startPosition,
-        end: endPosition,
-      ),
-      duration: Duration(seconds: speed.round()),
-      builder: (context, position, child) {
-        return CustomAnimationBuilder<double>(
-          tween: Tween<double>(begin: 0.02, end: 0.25),
-          duration: const Duration(seconds: 2),
-          curve: Curves.easeInOut,
-          builder: (context, opacity, _) {
-            return Positioned(
-              left: position,
-              top: 50.0 + (index * 80),
-              child: Opacity(
-                opacity: opacity,
-                child: Transform.rotate(
-                  angle: index * (math.pi / 12),
-                  child: Text(
-                    symbol,
-                    style: GoogleFonts.notoSans(
-                      fontSize: 30 + (index % 5) * 15,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ),
+    // Position animation
+    _positionController = AnimationController(
+      duration: Duration(seconds: widget.speed.round()),
+      vsync: this,
+    );
+
+    // Opacity animation
+    _opacityController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    );
+
+    // Start both animations
+    _positionController.repeat();
+    _opacityController.repeat(reverse: true);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _setupAnimations();
+  }
+
+  void _setupAnimations() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final symbolWidth = 300.0;
+    
+    final startPosition = widget.reverse
+        ? screenWidth + (widget.startOffset * screenWidth)
+        : -symbolWidth - (widget.startOffset * screenWidth);
+    final endPosition = widget.reverse
+        ? -symbolWidth - (widget.startOffset * screenWidth)
+        : screenWidth + (widget.startOffset * screenWidth);
+
+    _positionAnimation = Tween<double>(
+      begin: startPosition,
+      end: endPosition,
+    ).animate(_positionController);
+
+    _opacityAnimation = Tween<double>(
+      begin: 0.02,
+      end: 0.25,
+    ).animate(CurvedAnimation(
+      parent: _opacityController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _positionController.dispose();
+    _opacityController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([_positionAnimation, _opacityAnimation]),
+      builder: (context, child) {
+        return Positioned(
+          left: _positionAnimation.value,
+          top: 50.0 + (widget.index * 80),
+          child: Opacity(
+            opacity: _opacityAnimation.value,
+            child: Transform.rotate(
+              angle: widget.index * (math.pi / 12),
+              child: Text(
+                widget.symbol,
+                style: GoogleFonts.notoSans(
+                  fontSize: 30 + (widget.index % 5) * 15,
+                  color: Theme.of(context).primaryColor,
                 ),
               ),
-            );
-          },
+            ),
+          ),
         );
       },
     );
