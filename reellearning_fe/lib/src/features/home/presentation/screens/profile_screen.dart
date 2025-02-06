@@ -198,28 +198,15 @@ class _UserProfileContent extends ConsumerWidget {
   Widget _buildOtherProfileActions(BuildContext context) {
     return Column(
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            ElevatedButton.icon(
-              onPressed: () {
-                // TODO: Implement friend action
-              },
-              icon: const Icon(Icons.person_add),
-              label: const Text('Add Friend'),
-            ),
-            ElevatedButton.icon(
-              onPressed: () {
-                // TODO: Implement block action
-              },
-              icon: const Icon(Icons.block),
-              label: const Text('Block'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ],
+        ElevatedButton.icon(
+          onPressed: () {
+            // TODO: Implement friend action
+          },
+          icon: const Icon(Icons.person_add),
+          label: const Text('Add Friend'),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(200, 45),
+          ),
         ),
         const SizedBox(height: 20),
         ElevatedButton.icon(
@@ -259,6 +246,19 @@ class _UserProfileContent extends ConsumerWidget {
               ),
             );
           },
+        ),
+        const SizedBox(height: 20),
+        ElevatedButton.icon(
+          onPressed: () {
+            // TODO: Implement block action
+          },
+          icon: const Icon(Icons.block),
+          label: const Text('Block'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(200, 45),
+          ),
         ),
       ],
     );
