@@ -79,6 +79,8 @@ flutter_*.png
 *.mp4
 *.webm
 
+venv/
+
 verify_test_emails.js
 
 # windsurf rules
