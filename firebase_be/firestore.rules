@@ -33,6 +33,15 @@ service cloud.firestore {
                   request.auth.uid == userId;
     }
 
+    // Pending users collection rules
+    match /pending_users/{userId} {
+      // Allow reading and deleting only their own pending data
+      allow read, delete: if isAuthenticated() && 
+                         request.auth.uid == userId;
+      // Allow creating pending data during signup
+      allow create: if true;
+    }
+
     // Video Comments collection rules
     match /videoComments/{commentId} {
       // Anyone can read comments

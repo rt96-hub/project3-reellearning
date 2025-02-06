@@ -16,12 +16,19 @@ class AuthService {
       // Send email verification
       await userCredential.user!.sendEmailVerification();
 
-      // Store phone number in temporary auth user metadata
-      await userCredential.user!.updateDisplayName(phone);
+      // Store user data in temporary collection
+      await _firestore.collection('pending_users').doc(userCredential.user!.uid).set({
+        'email': email,
+        'phone': phone,
+        'createdAt': Timestamp.now(),
+      });
+
+      print('Successfully stored pending user data with phone: $phone');
 
       // Sign out immediately in case Firebase auto-signed in
       await _auth.signOut();
     } catch (e) {
+      print('Error during signup: $e');
       if (e is FirebaseAuthException) {
         throw _handleAuthError(e);
       }
@@ -54,19 +61,68 @@ class AuthService {
           .doc(userCredential.user!.uid)
           .get();
 
+      print('Checking if user document exists: ${userDoc.exists}');
+
       if (!userDoc.exists) {
-        // Create user document on first verified login
-        await _firestore.collection('users').doc(userCredential.user!.uid).set({
-          'uid': userCredential.user!.uid,
-          'email': email,
-          'phone': userCredential.user!.displayName ?? '', // Get phone from metadata
-          'createdAt': Timestamp.now(),
-          'profile': {
-            'displayName': email.split('@')[0],
-            'avatarUrl': '',
-            'biography': ''
+        print('User document does not exist, creating new one...');
+        
+        String phone = '';
+        
+        try {
+          // Get pending user data if it exists
+          final pendingUserDoc = await _firestore
+              .collection('pending_users')
+              .doc(userCredential.user!.uid)
+              .get();
+
+          print('Pending user document exists: ${pendingUserDoc.exists}');
+          if (pendingUserDoc.exists) {
+            final data = pendingUserDoc.data();
+            print('Pending user data: $data');
+            phone = data?['phone'] as String? ?? '';
           }
-        });
+        } catch (e) {
+          print('Error getting pending user data: $e');
+          // Continue with empty phone if there's an error
+        }
+
+        print('Using phone number: $phone');
+
+        try {
+          // Create user document on first verified login
+          await _firestore.collection('users').doc(userCredential.user!.uid).set({
+            'uid': userCredential.user!.uid,
+            'email': email,
+            'phone': phone,
+            'createdAt': Timestamp.now(),
+            'profile': {
+              'displayName': email.split('@')[0],
+              'avatarUrl': '',
+              'biography': ''
+            }
+          });
+          print('Successfully created user document');
+
+          // Try to clean up pending user data if it exists
+          try {
+            await _firestore
+                .collection('pending_users')
+                .doc(userCredential.user!.uid)
+                .delete();
+            print('Successfully cleaned up pending user data');
+          } catch (e) {
+            print('Error cleaning up pending user data (non-critical): $e');
+          }
+        } catch (e) {
+          print('Error creating user document: $e');
+          throw FirebaseException(
+            plugin: 'cloud_firestore',
+            code: 'user-creation-failed',
+            message: 'Failed to create user document: $e',
+          );
+        }
+      } else {
+        print('User document already exists');
       }
 
       return userCredential;

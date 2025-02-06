@@ -79,9 +79,7 @@ flutter_*.png
 *.mp4
 *.webm
 
-I need you to make a video rendering widget to play videos in my @home_screen.dart. We are going to use the dart video_player plugin, so refer to the documentation  
-@https://pub.dev/packages/video_player
-We want to use a very simple implementation, and right now I want to load the sample video in my local environment, but I believe @video_provider.dart  and @video_model.dart will handle selecting those videos. I need you to make a new file for this widget, so it can be reused in other contexts across the application.
+verify_test_emails.js
 
 # windsurf rules
 .windsurfrules

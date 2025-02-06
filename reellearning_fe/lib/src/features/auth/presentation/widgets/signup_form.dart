@@ -94,6 +94,18 @@ class _SignupFormState extends State<SignupForm> {
     return null;
   }
 
+  String? _validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter your phone number';
+    }
+    // Phone number validation for format: (XXX) XXX-XXXX or XXX-XXX-XXXX
+    final phoneRegex = RegExp(r'^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$');
+    if (!phoneRegex.hasMatch(value)) {
+      return 'Please enter a valid phone number';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -114,12 +126,7 @@ class _SignupFormState extends State<SignupForm> {
             controller: _phoneController,
             keyboardType: TextInputType.phone,
             prefixIcon: const Icon(Icons.phone_outlined),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your phone number';
-              }
-              return null;
-            },
+            validator: _validatePhone,
           ),
           const SizedBox(height: 16),
           CustomTextField(
