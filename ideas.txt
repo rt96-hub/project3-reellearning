@@ -16,22 +16,22 @@ x login signup page titles
 x add email verification
 x prevent login if email is not verified
 x validate phone number is correct format
-- on account creation
-    - account details input
-        - name
-        - bio
+x on account creation
+    x account details input
+        x name
+        x bio
         - pfp
+    x how do we quickly determine the users interests/competencies?
+        x maybe a survey?
+            - dynamic, what subjects are you interested in?
+                - select/enter math/history/chemistry/etc
+                - based on the subjects, we generate some further subtopics to select
     - create a class (or skip to see everything)
         - name
         - description
         - thumbnail
         - public or private
         - joinable or invitable
-    - how do we quickly determine the users interests/competencies?
-        - maybe a survey?
-            - dynamic, what subjects are you interested in?
-                - select/enter math/history/chemistry/etc
-                - based on the subjects, we generate some further subtopics to select
 
 
 
@@ -44,9 +44,9 @@ x validate phone number is correct format
         - only have so many videos downloaded/cached at once
             - download the first video in full, the second and third like 20% or something, or even first x seconds of the video
 
-The user's login info/status needs to be stored on the device so they can be logged in when they reopen
-implement the back drag gesture for navigation(maybe not)
-when the app is minimized, it stays on the page when they reopen
+x The user's login info/status needs to be stored on the device so they can be logged in when they reopen
+x implement the back drag gesture for navigation(maybe not)
+- when the app is minimized, it stays on the page when they reopen
 
 - like and bookmark should work if they dont have a class!!!!!!
     - right now it doesn't show the personal feed option if they are in no classes (just no classes at all, if they are a member of a class, they dont see the regular class record(which is correct) but they still see the personal feed option)
