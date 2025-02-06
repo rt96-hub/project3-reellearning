@@ -8,19 +8,9 @@ learning app
 - users can mark videos as not understood, partially understood, or fully understood, and the app will suggest more content accordingly
     - this needs to be relevant to the specific type of content they are watching, math or history comprehesion shouldn't be directly related
 - no phone rotate
+
+
 - login/signup page has a background of equations and other educational text floating across the background
-
-
-
-The user's login info/status needs to be stored on the device so they can be logged in when they reopen
-implement the back drag gesture for navigation(maybe not)
-when the app is minimized, it stays on the page when they reopen
-
-x validate email is correct format
-- add email verification
-- prevent login if email is not verified
-- validate phone number is correct format
-
 - on account creation
     - account details input
         - name
@@ -37,6 +27,18 @@ x validate email is correct format
             - dynamic, what subjects are you interested in?
                 - select/enter math/history/chemistry/etc
                 - based on the subjects, we generate some further subtopics to select
+
+
+
+The user's login info/status needs to be stored on the device so they can be logged in when they reopen
+implement the back drag gesture for navigation(maybe not)
+when the app is minimized, it stays on the page when they reopen
+
+x validate email is correct format
+- add email verification
+- prevent login if email is not verified
+- validate phone number is correct format
+
         
 
 

@@ -258,7 +258,7 @@ class _ClassSelectionModalState extends ConsumerState<ClassSelectionModal> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Select Classes to ${widget.interactionType == InteractionType.like ? 'Like' : 'Bookmark'} In',
+                  '${widget.interactionType == InteractionType.like ? 'Like' : 'Bookmark'} for Classes',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 IconButton(
@@ -300,8 +300,6 @@ class _ClassSelectionModalState extends ConsumerState<ClassSelectionModal> {
                               label: SizedBox(width: 48),
                             ),
                             DataColumn(label: Text('Class')),
-                            DataColumn(label: Text('Role')),
-                            DataColumn(label: Text('Members')),
                           ],
                           rows: List.generate(
                             memberships.where((doc) {
@@ -316,7 +314,6 @@ class _ClassSelectionModalState extends ConsumerState<ClassSelectionModal> {
                               
                               final membership = curatorMemberships[index].data() as Map<String, dynamic>;
                               final classRef = membership['classId'] as DocumentReference;
-                              final role = membership['role'] as String;
 
                               return DataRow(
                                 cells: [
@@ -360,20 +357,6 @@ class _ClassSelectionModalState extends ConsumerState<ClassSelectionModal> {
                                             ),
                                           ],
                                         );
-                                      },
-                                    ),
-                                  ),
-                                  DataCell(Text(role.toUpperCase())),
-                                  DataCell(
-                                    FutureBuilder<DocumentSnapshot>(
-                                      future: classRef.get(),
-                                      builder: (context, AsyncSnapshot<DocumentSnapshot> classSnapshot) {
-                                        if (!classSnapshot.hasData) {
-                                          return const Text('...');
-                                        }
-
-                                        final classData = classSnapshot.data!.data() as Map<String, dynamic>;
-                                        return Text('${classData['memberCount'] ?? 0}');
                                       },
                                     ),
                                   ),
