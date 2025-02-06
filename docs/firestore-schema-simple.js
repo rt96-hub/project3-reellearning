@@ -40,6 +40,7 @@ videos: {
     engagement: {
       views: Number,
       likes: Number,
+      bookmarks: Number,
       shares: Number,
       completionRate: Number,
       averageWatchTime: Number
@@ -238,8 +239,7 @@ userBookmarks: {
     userId: Reference,
     videoId: Reference,
     classId: Array<Reference>,  // Optional, if bookmarked within a class, then classId may be appended to the array
-    addedAt: Timestamp,
-    notes: String
+    addedAt: Timestamp
 
   }
 }

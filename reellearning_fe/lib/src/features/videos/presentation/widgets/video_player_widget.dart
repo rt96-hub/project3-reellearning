@@ -25,7 +25,6 @@ class VideoPlayerWidget extends StatefulWidget {
 class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
   VideoPlayerController? _controller;
   bool _isInitialized = false;
-  String _debugInfo = 'Initializing...';
   bool _showPlayPauseOverlay = false;
   bool _showSeekOverlay = false;
   String _seekDirection = '';
@@ -38,17 +37,10 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
 
   Future<void> _initializeController() async {
     debugPrint('Initializing video with URL: ${widget.video.videoUrl}');
-    setState(() {
-      _debugInfo = 'Loading URL: ${widget.video.videoUrl}';
-    });
     
     try {
       final videoUrl = await widget.video.getDownloadUrl();
       if (!mounted) return;
-
-      setState(() {
-        _debugInfo = 'Got download URL: $videoUrl\nInitializing controller...';
-      });
 
       final controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
       await controller.initialize();
@@ -61,14 +53,6 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       setState(() {
         _controller = controller;
         _isInitialized = true;
-        _debugInfo = '''
-Debug Info:
-File: ${widget.video.id}
-URL: $videoUrl
-Duration: ${controller.value.duration}
-Dimensions: ${controller.value.size.width.toInt()}x${controller.value.size.height.toInt()}
-Position: ${controller.value.position}
-''';
       });
 
       debugPrint('Video initialized successfully');
@@ -86,16 +70,7 @@ Position: ${controller.value.position}
       // Update debug info periodically
       controller.addListener(() {
         if (mounted) {
-          setState(() {
-            _debugInfo = '''
-Debug Info:
-File: ${widget.video.id}
-URL: $videoUrl
-Duration: ${controller.value.duration}
-Dimensions: ${controller.value.size.width.toInt()}x${controller.value.size.height.toInt()}
-Position: ${controller.value.position}
-''';
-          });
+          setState(() {});
         }
       });
 
@@ -104,7 +79,6 @@ Position: ${controller.value.position}
       if (mounted) {
         setState(() {
           _isInitialized = false;
-          _debugInfo = 'Error: $e';
         });
       }
     }
@@ -224,9 +198,11 @@ Position: ${controller.value.position}
                   ValueListenableBuilder(
                     valueListenable: _controller!,
                     builder: (context, VideoPlayerValue value, child) {
+                      final widthFactor = value.duration.inMilliseconds > 0
+                          ? value.position.inMilliseconds / value.duration.inMilliseconds
+                          : 0.0;
                       return FractionallySizedBox(
-                        widthFactor: value.position.inMilliseconds /
-                                    value.duration.inMilliseconds,
+                        widthFactor: widthFactor.clamp(0.0, 1.0),
                         child: Container(
                           color: Colors.white,
                         ),
@@ -296,27 +272,6 @@ Position: ${controller.value.position}
               ),
             ),
           ),
-
-        // Debug Info Overlay
-        Positioned(
-          top: 40,
-          left: 10,
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.7),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              _debugInfo,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontFamily: 'Courier',
-              ),
-            ),
-          ),
-        ),
       ],
     );
   }

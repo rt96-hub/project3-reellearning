@@ -74,12 +74,21 @@ service cloud.firestore {
       // The likeId must be in format: "{userId}_{videoId}"
       allow create: if isAuthenticated();
       
-      allow delete: if isAuthenticated() &&
+      allow delete, update: if isAuthenticated() &&
                           likeId.split('_')[0] == request.auth.uid;
-      
+    }
 
-      // No updates allowed on likes (they can only be created or deleted)
-      allow update: if false;
+    // User Bookmarks collection rules
+    match /userBookmarks/{bookmarkId} {
+      // Anyone can read bookmarks
+      allow read: if true;
+      
+      // Only authenticated users can create/delete their own bookmarks
+      // The bookmarkId must be in format: "{userId}_{videoId}"
+      allow create: if isAuthenticated();
+      
+      allow delete, update: if isAuthenticated() &&
+                          bookmarkId.split('_')[0] == request.auth.uid;
     }
 
     // Video Comprehension collection rules

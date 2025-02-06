@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math' as math;
 import 'package:reellearning_fe/src/features/auth/data/providers/auth_provider.dart';
 import 'package:reellearning_fe/src/features/videos/presentation/widgets/video_comments_modal.dart';
+import 'package:reellearning_fe/src/features/videos/presentation/widgets/class_selection_modal.dart';
 
 class VideoActionButtons extends ConsumerStatefulWidget {
   final String videoId;
@@ -29,6 +30,8 @@ class _VideoActionButtonsState extends ConsumerState<VideoActionButtons> {
     super.initState();
     currentLikeCount = widget.likeCount;
     _checkIfLiked();
+    _checkIfBookmarked();
+    _setupLikeCountListener();
   }
   
   @override
@@ -42,6 +45,7 @@ class _VideoActionButtonsState extends ConsumerState<VideoActionButtons> {
         isBookmarked = false;
       });
       _checkIfLiked();
+      _checkIfBookmarked();
     }
   }
 
@@ -59,81 +63,54 @@ class _VideoActionButtonsState extends ConsumerState<VideoActionButtons> {
     }
   }
 
+  Future<void> _checkIfBookmarked() async {
+    final userId = ref.read(currentUserProvider)?.uid;
+    if (userId == null) return;
+
+    final bookmarkDoc = await FirebaseFirestore.instance
+        .collection('userBookmarks')
+        .doc('${userId}_${widget.videoId}')
+        .get();
+
+    if (mounted) {
+      setState(() => isBookmarked = bookmarkDoc.exists);
+    }
+  }
+
   Future<void> _handleLike() async {
     final userId = ref.read(currentUserProvider)?.uid;
     if (userId == null) return;
 
-    final likeId = '${userId}_${widget.videoId}';
-    final likeRef = FirebaseFirestore.instance.collection('userLikes').doc(likeId);
-    final videoRef = FirebaseFirestore.instance.collection('videos').doc(widget.videoId);
+    showDialog(
+      context: context,
+      builder: (context) => ClassSelectionModal(
+        videoId: widget.videoId,
+        interactionType: InteractionType.like,
+        onInteractionChanged: (isSelected) {
+          setState(() {
+            isLiked = isSelected;
+          });
+        },
+      ),
+    );
+  }
 
-    // Start a batch write
-    final batch = FirebaseFirestore.instance.batch();
+  Future<void> _handleBookmark() async {
+    final userId = ref.read(currentUserProvider)?.uid;
+    if (userId == null) return;
 
-    if (!isLiked) {
-      // Add like document
-      batch.set(likeRef, {
-        'userId': userId,
-        'videoId': widget.videoId,
-        'likedAt': FieldValue.serverTimestamp(),
-        // TODO: Implement class selection for likes
-        // 'classId': selectedClassId,
-      });
-
-      // Get current video data first
-      final videoDoc = await videoRef.get();
-      final videoData = videoDoc.data() as Map<String, dynamic>;
-      final engagement = videoData['engagement'] ?? {
-        'likes': 0,
-        'views': 0,
-        'shares': 0,
-        'completionRate': 0.0,
-        'averageWatchTime': 0.0,
-      };
-      
-      // Update entire engagement object
-      batch.update(videoRef, {
-        'engagement': {
-          ...engagement,
-          'likes': (engagement['likes'] ?? 0) + 1,
-        }
-      });
-
-      setState(() {
-        isLiked = true;
-        currentLikeCount++;
-      });
-    } else {
-      // Remove like document
-      batch.delete(likeRef);
-
-      // Get current video data first
-      final videoDoc = await videoRef.get();
-      final videoData = videoDoc.data() as Map<String, dynamic>;
-      final engagement = videoData['engagement'] ?? {
-        'likes': 0,
-        'views': 0,
-        'shares': 0,
-        'completionRate': 0.0,
-        'averageWatchTime': 0.0,
-      };
-      
-      // Update entire engagement object
-      batch.update(videoRef, {
-        'engagement': {
-          ...engagement,
-          'likes': math.max<int>(0, (engagement['likes'] ?? 0) - 1),
-        }
-      });
-
-      setState(() {
-        isLiked = false;
-        currentLikeCount--;
-      });
-    }
-
-    // Commit the batch
-    await batch.commit();
+    showDialog(
+      context: context,
+      builder: (context) => ClassSelectionModal(
+        videoId: widget.videoId,
+        interactionType: InteractionType.bookmark,
+        onInteractionChanged: (isSelected) {
+          setState(() {
+            isBookmarked = isSelected;
+          });
+        },
+      ),
+    );
   }
 
   void _showCommentsModal() {
@@ -148,6 +125,22 @@ class _VideoActionButtonsState extends ConsumerState<VideoActionButtons> {
         child: VideoCommentsModal(videoId: widget.videoId),
       ),
     );
+  }
+
+  void _setupLikeCountListener() {
+    FirebaseFirestore.instance
+        .collection('videos')
+        .doc(widget.videoId)
+        .snapshots()
+        .listen((snapshot) {
+      if (snapshot.exists) {
+        final data = snapshot.data()!;
+        final engagement = data['engagement'] ?? {};
+        setState(() {
+          currentLikeCount = engagement['likes'] ?? 0;
+        });
+      }
+    });
   }
 
   Widget _buildActionButton({
@@ -200,18 +193,20 @@ class _VideoActionButtonsState extends ConsumerState<VideoActionButtons> {
           onPressed: _handleLike,
           isFilled: isLiked,
           fillColor: Colors.red,
-          count: currentLikeCount.toString(),
+          count: currentLikeCount > 0 ? currentLikeCount.toString() : null,
         ),
+        const SizedBox(height: 8),
+        _buildActionButton(
+          icon: isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+          onPressed: _handleBookmark,
+          isFilled: isBookmarked,
+        ),
+        const SizedBox(height: 8),
         _buildActionButton(
           icon: Icons.comment,
           onPressed: _showCommentsModal,
         ),
-        _buildActionButton(
-          icon: isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-          onPressed: () => setState(() => isBookmarked = !isBookmarked),
-          isFilled: isBookmarked,
-          fillColor: Colors.white,
-        ),
+        const SizedBox(height: 8),
         _buildActionButton(
           icon: Icons.share,
           onPressed: () {
@@ -221,4 +216,4 @@ class _VideoActionButtonsState extends ConsumerState<VideoActionButtons> {
       ],
     );
   }
-} 
+}
