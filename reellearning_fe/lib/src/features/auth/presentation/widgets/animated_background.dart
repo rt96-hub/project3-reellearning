@@ -20,11 +20,13 @@ class _AnimatedBackgroundState extends State<AnimatedBackground> {
   late final List<bool> directions;
   late final List<double> speeds;
   late final List<double> startOffsets;
+  late final List<double> opacitySpeeds;
+  late final List<double> opacityOffsets;
 
   @override
   void initState() {
     super.initState();
-    const availableSymbols = '∑∏∆∇∫≈≠∞♪♫αβγπΩ';
+    const availableSymbols = '∑∏∆∇∫≈≠∞αβγπΩ∄∋=+%';
     final random = math.Random();
     
     symbols = List.generate(20, (index) {
@@ -34,11 +36,19 @@ class _AnimatedBackgroundState extends State<AnimatedBackground> {
     directions = List.generate(20, (index) => index < 10 ? true : false)..shuffle(random);
     
     speeds = List.generate(20, (index) {
-      return 10 + random.nextDouble() * 4;
+      return 8 + random.nextDouble() * 4; 
     });
     
     startOffsets = List.generate(20, (index) {
       return random.nextDouble();
+    });
+
+    opacitySpeeds = List.generate(20, (index) {
+      return 1.5 + random.nextDouble(); 
+    });
+
+    opacityOffsets = List.generate(20, (index) {
+      return random.nextDouble(); 
     });
   }
 
@@ -53,6 +63,8 @@ class _AnimatedBackgroundState extends State<AnimatedBackground> {
           reverse: directions[index],
           speed: speeds[index],
           startOffset: startOffsets[index],
+          opacitySpeed: opacitySpeeds[index],
+          opacityOffset: opacityOffsets[index],
         ),
       ),
     );
@@ -65,6 +77,8 @@ class SymbolWidget extends StatefulWidget {
   final bool reverse;
   final double speed;
   final double startOffset;
+  final double opacitySpeed;
+  final double opacityOffset;
 
   const SymbolWidget({
     super.key,
@@ -73,6 +87,8 @@ class SymbolWidget extends StatefulWidget {
     required this.reverse,
     required this.speed,
     required this.startOffset,
+    required this.opacitySpeed,
+    required this.opacityOffset,
   });
 
   @override
@@ -89,39 +105,32 @@ class _SymbolWidgetState extends State<SymbolWidget> with TickerProviderStateMix
   void initState() {
     super.initState();
     
-    // Position animation
     _positionController = AnimationController(
       duration: Duration(seconds: widget.speed.round()),
       vsync: this,
     );
 
-    // Opacity animation
     _opacityController = AnimationController(
-      duration: const Duration(seconds: 2),
+      duration: Duration(milliseconds: (widget.opacitySpeed * 1000).round()),
       vsync: this,
+      value: widget.opacityOffset, 
     );
 
-    // Start both animations
     _positionController.repeat();
     _opacityController.repeat(reverse: true);
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _setupAnimations();
-  }
-
   void _setupAnimations() {
     final screenWidth = MediaQuery.of(context).size.width;
-    final symbolWidth = 300.0;
+    // Calculate actual symbol width based on font size
+    final symbolWidth = (30 + (widget.index % 5) * 15) * 1.2; // Add 20% padding
     
     final startPosition = widget.reverse
-        ? screenWidth + (widget.startOffset * screenWidth)
-        : -symbolWidth - (widget.startOffset * screenWidth);
+        ? screenWidth + (widget.startOffset * symbolWidth)
+        : -symbolWidth - (widget.startOffset * symbolWidth);
     final endPosition = widget.reverse
-        ? -symbolWidth - (widget.startOffset * screenWidth)
-        : screenWidth + (widget.startOffset * screenWidth);
+        ? -symbolWidth - (widget.startOffset * symbolWidth)
+        : screenWidth + (widget.startOffset * symbolWidth);
 
     _positionAnimation = Tween<double>(
       begin: startPosition,
@@ -129,12 +138,18 @@ class _SymbolWidgetState extends State<SymbolWidget> with TickerProviderStateMix
     ).animate(_positionController);
 
     _opacityAnimation = Tween<double>(
-      begin: 0.02,
+      begin: 0.05,
       end: 0.25,
     ).animate(CurvedAnimation(
       parent: _opacityController,
       curve: Curves.easeInOut,
     ));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _setupAnimations();
   }
 
   @override
