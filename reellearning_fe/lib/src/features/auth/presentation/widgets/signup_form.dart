@@ -48,8 +48,8 @@ class _SignupFormState extends State<SignupForm> {
         );
         
         if (mounted) {
-          context.go('/login');
           _showSuccessMessage();
+          context.go('/login');
         }
       } catch (e) {
         _showErrorMessage(e.toString());
@@ -64,7 +64,10 @@ class _SignupFormState extends State<SignupForm> {
   void _showSuccessMessage() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Please check your email for confirmation'),
+        content: Text(
+          'Account created! Please check your email for a verification link. You must verify your email before signing in.',
+        ),
+        duration: Duration(seconds: 10),
         backgroundColor: Colors.green,
       ),
     );

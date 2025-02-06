@@ -5,30 +5,23 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<UserCredential> signUp(String email, String password, String phone) async {
+  Future<void> signUp(String email, String password, String phone) async {
     try {
-      // First create the auth user
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      // Create auth user without signing in
+      final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      
-      // Then create the user document with explicit typing
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
-        'uid': userCredential.user!.uid,
-        'email': email,
-        'phone': phone,
-        'createdAt': Timestamp.now(),
-        'profile': {
-          'displayName': email.split('@')[0],  // Use part before @ as initial display name
-          'avatarUrl': '',  // Empty for now
-          'biography': ''   // Empty for now
-        }
-      });
 
-      return userCredential;
+      // Send email verification
+      await userCredential.user!.sendEmailVerification();
+
+      // Store phone number in temporary auth user metadata
+      await userCredential.user!.updateDisplayName(phone);
+
+      // Sign out immediately in case Firebase auto-signed in
+      await _auth.signOut();
     } catch (e) {
-      // Add better error handling
       if (e is FirebaseAuthException) {
         throw _handleAuthError(e);
       }
@@ -38,32 +31,62 @@ class AuthService {
 
   Future<UserCredential> signIn(String email, String password) async {
     try {
+      // Attempt to sign in to check verification status
       final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // Check if user document exists and has profile
-      final userDoc = await _firestore.collection('users').doc(userCredential.user!.uid).get();
-      
-      if (!userDoc.exists || !userDoc.data()!.containsKey('profile')) {
-        // Create or update user document with profile
+      // If we get here, the user exists and password is correct
+      // Now check verification status
+      if (!userCredential.user!.emailVerified) {
+        // Sign out and throw verification error
+        await _auth.signOut();
+        throw FirebaseAuthException(
+          code: 'email-not-verified',
+          message: 'Please check your email for a verification link before signing in.',
+        );
+      }
+
+      // User is verified, check if user document exists
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .get();
+
+      if (!userDoc.exists) {
+        // Create user document on first verified login
         await _firestore.collection('users').doc(userCredential.user!.uid).set({
           'uid': userCredential.user!.uid,
           'email': email,
+          'phone': userCredential.user!.displayName ?? '', // Get phone from metadata
+          'createdAt': Timestamp.now(),
           'profile': {
             'displayName': email.split('@')[0],
             'avatarUrl': '',
             'biography': ''
           }
-        }, SetOptions(merge: true));  // merge: true ensures we don't overwrite other fields
+        });
       }
 
       return userCredential;
-    } catch (e) {
-      if (e is FirebaseAuthException) {
-        throw _handleAuthError(e);
+    } on FirebaseAuthException catch (e) {
+      // Handle specific Firebase Auth errors
+      switch (e.code) {
+        case 'user-not-found':
+          throw FirebaseAuthException(
+            code: 'user-not-found',
+            message: 'No account found with this email. Please sign up first.',
+          );
+        case 'wrong-password':
+          throw FirebaseAuthException(
+            code: 'wrong-password',
+            message: 'Incorrect password. Please try again.',
+          );
+        default:
+          throw _handleAuthError(e);
       }
+    } catch (e) {
       rethrow;
     }
   }
@@ -71,15 +94,17 @@ class AuthService {
   String _handleAuthError(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
-        return 'No user found with this email';
+        return 'No account found with this email. Please sign up first.';
       case 'wrong-password':
-        return 'Wrong password provided';
+        return 'Incorrect password. Please try again.';
       case 'email-already-in-use':
         return 'An account already exists with this email';
       case 'invalid-email':
         return 'Invalid email address';
       case 'weak-password':
         return 'The password provided is too weak';
+      case 'email-not-verified':
+        return 'Please check your email for a verification link before signing in.';
       default:
         return e.message ?? 'An unknown error occurred';
     }
@@ -92,4 +117,12 @@ class AuthService {
   User? get currentUser => _auth.currentUser;
 
   Stream<User?> authStateChanges() => _auth.authStateChanges();
-} 
+
+  // Add method to resend verification email
+  Future<void> resendVerificationEmail() async {
+    final user = _auth.currentUser;
+    if (user != null && !user.emailVerified) {
+      await user.sendEmailVerification();
+    }
+  }
+}

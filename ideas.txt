@@ -13,8 +13,8 @@ learning app
 x login/signup page has a background of equations and other educational text floating across the background
 x validate email is correct format
 x login signup page titles
-- add email verification
-- prevent login if email is not verified
+x add email verification
+x prevent login if email is not verified
 - validate phone number is correct format
 - on account creation
     - account details input
@@ -39,7 +39,8 @@ The user's login info/status needs to be stored on the device so they can be log
 implement the back drag gesture for navigation(maybe not)
 when the app is minimized, it stays on the page when they reopen
 
-
+- like and bookmark should work if they dont have a class!!!!!!
+    - right now it doesn't show the personal feed option if they are in no classes (just no classes at all, if they are a member of a class, they dont see the regular class record(which is correct) but they still see the personal feed option)
         
 
 
