@@ -28,19 +28,11 @@ class SignupScreen extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Create Account',
+                          'ReelLearning',
                           style: GoogleFonts.poppins(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).primaryColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Sign up to get started',
-                          style: GoogleFonts.poppins(
-                            color: Colors.grey,
-                            fontSize: 16,
                           ),
                         ),
                         const SizedBox(height: 24),
