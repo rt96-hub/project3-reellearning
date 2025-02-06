@@ -237,7 +237,7 @@ userBookmarks: {
   userId_videoId: {
     userId: Reference,
     videoId: Reference,
-    classId: Reference,  // Optional, if bookmarked within a class, probably need some kind of index to make this faster when looking up by the classId
+    classId: Array<Reference>,  // Optional, if bookmarked within a class, then classId may be appended to the array
     addedAt: Timestamp,
     notes: String
 
@@ -248,7 +248,7 @@ userLikes: {
   userId_videoId: {
     userId: Reference,
     videoId: Reference,
-    classId: Reference,  // Optional, if liked within a class context
+    classId: Array<Reference>,  // Optional, if liked within a class context, can be updated to append new classId
     likedAt: Timestamp
   }
 }
@@ -258,16 +258,11 @@ videoComprehension: {
   userId_videoId: {
     userId: Reference,
     videoId: Reference,
-    classId: Reference,  // Optional, if watched within a class
+    classId: Array<Reference>,  // Optional, if watched within a class, then classId may be appended to the array
     comprehensionLevel: String,  // 'not_understood', 'partially_understood', 'fully_understood'
     assessedAt: Timestamp,
     updatedAt: Timestamp,
     watchCount: Number,  // How many times they've watched the video
-    difficulties: {
-      timestamps: Array<Number>,  // Video timestamps where user marked difficulty
-      topics: Array<String>      // Specific topics user found challenging
-    },
-    notes: String,  // Personal notes about understanding
     nextRecommendedReview: Timestamp  // For spaced repetition learning
   }
 }
