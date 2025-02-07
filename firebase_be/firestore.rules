@@ -50,14 +50,50 @@ service cloud.firestore {
       // Only authenticated users can create comments
       allow create: if isAuthenticated();
       
-      // Only comment author can update or delete their comments
-      allow update, delete: if isAuthenticated() &&
-                          (
-                            // Author can update any field
-                            resource.data.author.uid == request.auth.uid ||
-                            // Any authenticated user can update likeCount
-                            (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount']))
-                          );
+      // Allow updates for replies and likes
+      allow update: if isAuthenticated() && (
+        // Author can update any field
+        resource.data.author.uid == request.auth.uid ||
+        // Any authenticated user can update specific fields for replies and likes
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hasReplies', 'replyCount', 'replies', 'likeCount'])
+      );
+      
+      // Only comment author can delete their comments
+      allow delete: if isAuthenticated() && resource.data.author.uid == request.auth.uid;
+    }
+
+    // Comment Replies collection rules
+    match /commentReplies/{replyId} {
+      // Anyone can read replies
+      allow read: if true;
+      
+      // Only authenticated users can create replies
+      allow create: if isAuthenticated();
+      
+      // Allow updates for likes and edits
+      allow update: if isAuthenticated() && (
+        // Author can update content and metadata
+        resource.data.author.uid == request.auth.uid ||
+        // Any authenticated user can update likeCount
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likeCount'])
+      );
+      
+      // Only reply author can delete their replies
+      allow delete: if isAuthenticated() && resource.data.author.uid == request.auth.uid;
+    }
+
+    // Comment Reply Likes collection rules
+    match /commentReplyLikes/{likeId} {
+      // Anyone can read likes
+      allow read: if true;
+      
+      // Only authenticated users can create/delete their own likes
+      // The likeId must be in format: "{userId}_{replyId}"
+      allow create, delete: if isAuthenticated() &&
+                          likeId.split('_')[0] == request.auth.uid;
+      
+      // No updates allowed on likes (they can only be created or deleted)
+      allow update: if false;
     }
 
     // Comment Likes collection rules

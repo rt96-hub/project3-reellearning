@@ -63,6 +63,9 @@ videoComments: {
       }>
     },
     likeCount: Number,
+    hasReplies: Boolean,
+    replyCount: Number,
+    replies: Array<Reference>,
     metadata: {
       createdAt: Timestamp,
       updatedAt: Timestamp,
@@ -103,6 +106,15 @@ commentReplies: {
       isEdited: Boolean,
       isAcceptedAnswer: Boolean  // For marking best explanations
     },
+  }
+}
+
+// Comment Reply Likes Collection
+commentReplyLikes: {
+  userId_replyId: {
+    userId: Reference,
+    replyId: Reference,
+    likedAt: Timestamp
   }
 }
 

@@ -13,6 +13,20 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "commentReplies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "commentId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "likeCount",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

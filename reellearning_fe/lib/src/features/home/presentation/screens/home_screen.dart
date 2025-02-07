@@ -35,13 +35,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ref.read(selectedFeedProvider.notifier).state = 'personal';
         ref.read(paginatedVideoProvider.notifier).refresh();
       }
-
-      // Listen for feed changes
-      ref.listen(currentChannelIdProvider, (previous, next) {
-        print('[HomeScreen] Feed changed from $previous to $next');
-        // Reset page controller when feed changes
-        _pageController.jumpToPage(0);
-      });
     });
   }
 
@@ -78,6 +71,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen for feed changes in build method
+    ref.listen(currentChannelIdProvider, (previous, next) {
+      print('[HomeScreen] Feed changed from $previous to $next');
+      // Reset page controller when feed changes
+      _pageController.jumpToPage(0);
+    });
+
     final videos = ref.watch(paginatedVideoProvider);
     final userProfile = ref.watch(currentUserProvider);
     final currentIndex = ref.watch(currentVideoIndexProvider);
