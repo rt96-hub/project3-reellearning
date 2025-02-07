@@ -74,7 +74,9 @@ class _FeedSelectionPillState extends ConsumerState<FeedSelectionPill> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      width: MediaQuery.of(context).size.width * 0.4,
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.5,
+      ),
       alignment: Alignment.center,
       child: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
@@ -193,6 +195,7 @@ class _FeedSelectionPillState extends ConsumerState<FeedSelectionPill> {
                     icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
                     dropdownColor: Colors.black.withOpacity(0.9),
                     style: const TextStyle(color: Colors.white),
+                    isExpanded: true,
                     hint: _buildDropdownItem(
                       displayName,
                       Icons.group,
@@ -221,16 +224,22 @@ class _FeedSelectionPillState extends ConsumerState<FeedSelectionPill> {
   }
 
   Widget _buildDropdownItem(String text, IconData icon, Color iconColor) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: iconColor, size: 16),
-        const SizedBox(width: 8),
-        Text(
-          text,
-          style: const TextStyle(color: Colors.white),
-        ),
-      ],
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 100),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: iconColor, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(color: Colors.white),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
