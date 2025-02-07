@@ -21,12 +21,6 @@ x on account creation
         x name
         x bio
         - pfp
-    - create a class (or skip to see everything)
-        - name
-        - description
-        - thumbnail
-        - public or private
-        - joinable or invitable
     x how do we quickly determine the users interests/competencies?
         x maybe a survey?
             - dynamic, what subjects are you interested in?
@@ -38,10 +32,10 @@ x on account creation
 
 - make sure 5 videos are not LOADING at once, just that we get the queue for 5
     x need to write some kind of function that will generate a recommended queue of x videos, along with a userId parameter/classId parameter
-        ? frontend can determine how many it needs to ask for, and pass the context of the user or class
+        x frontend can determine how many it needs to ask for, and pass the context of the user or class
         x backend will generate the next x videos
         x frontend will append the videos to the queue
-        - drop the first videos after we get 50 through the queue or something? so theres never more than 55 in the total queue?
+        x drop the first videos after we get 50 through the queue or something? so theres never more than 55 in the total queue?
         - how do we track if a video has been watched??
         - only have so many videos downloaded/cached at once
             - download the first video in full, the second and third like 20% or something, or even first x seconds of the video
