@@ -106,8 +106,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (userProfile != null)
             Positioned(
               top: MediaQuery.of(context).padding.top + 8,
-              left: 0,
-              right: 0,
+              left: MediaQuery.of(context).size.width * 0.18, // 30% from left
+              right: MediaQuery.of(context).size.width * 0.18, // 30% from right
               child: FeedSelectionPill(userId: userProfile.uid),
             ),
 
