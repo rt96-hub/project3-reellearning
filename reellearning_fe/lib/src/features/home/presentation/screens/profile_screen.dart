@@ -209,17 +209,6 @@ class _UserProfileContent extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 20),
-        ElevatedButton.icon(
-          onPressed: () {
-            context.go('/profile/${userId}/videos');
-          },
-          icon: const Icon(Icons.video_library),
-          label: const Text('Posted Videos'),
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(200, 45),
-          ),
-        ),
-        const SizedBox(height: 12),
         StreamBuilder<DocumentSnapshot>(
           stream: FirebaseFirestore.instance
               .collection('users')
@@ -232,18 +221,36 @@ class _UserProfileContent extends ConsumerWidget {
             
             final userData = snapshot.data!.data() as Map<String, dynamic>;
             final profile = userData['profile'] as Map<String, dynamic>? ?? {};
+            final displayName = profile['displayName'] ?? 'No Name';
             
-            return ElevatedButton.icon(
-              onPressed: () {
-                context.go('/profile/${userId}/classes', extra: {
-                  'displayName': profile['displayName'] ?? 'No Name',
-                });
-              },
-              icon: const Icon(Icons.class_),
-              label: const Text('View Classes'),
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(200, 45),
-              ),
+            return Column(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () {
+                    context.go('/profile/$userId/videos', extra: {
+                      'displayName': displayName,
+                    });
+                  },
+                  icon: const Icon(Icons.video_library),
+                  label: const Text('Posted Videos'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(200, 45),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    context.go('/profile/$userId/classes', extra: {
+                      'displayName': displayName,
+                    });
+                  },
+                  icon: const Icon(Icons.class_),
+                  label: const Text('View Classes'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(200, 45),
+                  ),
+                ),
+              ],
             );
           },
         ),

@@ -18,6 +18,7 @@ import '../../features/home/presentation/screens/user_classes_screen.dart';
 import '../../features/home/presentation/screens/settings_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_profile_screen.dart';
 import '../../features/onboarding/presentation/screens/interests_screen.dart';
+import '../../features/videos/presentation/screens/video_grid_screen.dart';
 import '../widgets/shell_scaffold.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -145,20 +146,20 @@ final routerProvider = Provider<GoRouter>((ref) {
                       ),
                       GoRoute(
                         path: 'videos',
-                        builder: (context, state) => const Scaffold(
-                          body: Center(child: Text('Your Posted Videos - Coming Soon')),
+                        builder: (context, state) => const VideoGridScreen(
+                          title: 'Your Videos',
                         ),
                       ),
                       GoRoute(
                         path: 'liked-videos',
-                        builder: (context, state) => const Scaffold(
-                          body: Center(child: Text('Liked Videos - Coming Soon')),
+                        builder: (context, state) => const VideoGridScreen(
+                          title: 'Your Likes',
                         ),
                       ),
                       GoRoute(
                         path: 'bookmarked',
-                        builder: (context, state) => const Scaffold(
-                          body: Center(child: Text('Bookmarked Videos - Coming Soon')),
+                        builder: (context, state) => const VideoGridScreen(
+                          title: 'Your Bookmarks',
                         ),
                       ),
                     ],
@@ -171,7 +172,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                     routes: [
                       GoRoute(
                         path: 'videos',
-                        builder: (context, state) => const Text('Videos'), // TODO: Implement
+                        builder: (context, state) => VideoGridScreen(
+                          title: '${(state.extra as Map<String, dynamic>)['displayName'] as String} Videos',
+                        ),
                       ),
                       GoRoute(
                         path: 'classes',
@@ -220,6 +223,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                             builder: (context, state) => ClassMembersScreen(
                               classId: state.pathParameters['classId']!,
                               className: (state.extra as Map<String, dynamic>)['className'] as String,
+                            ),
+                          ),
+                          GoRoute(
+                            path: 'bookmarked',
+                            builder: (context, state) => VideoGridScreen(
+                              title: '${(state.extra as Map<String, dynamic>)['className'] as String} Bookmarks',
                             ),
                           ),
                         ],

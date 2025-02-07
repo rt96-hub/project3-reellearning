@@ -123,6 +123,23 @@ class ClassDetailScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildBookmarksButton(BuildContext context, String className) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () => context.go(
+          '/classes/$classId/bookmarked',
+          extra: {'className': className},
+        ),
+        icon: const Icon(Icons.bookmark_outline),
+        label: Text('$className Bookmarks'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final firestore = FirebaseFirestore.instance;
@@ -236,6 +253,8 @@ class ClassDetailScreen extends ConsumerWidget {
                 _buildJoinLeaveButton(context, ref, classModel),
                 const SizedBox(height: 8),
                 _buildShowFeedButton(context, ref),
+                const SizedBox(height: 8),
+                _buildBookmarksButton(context, classModel.title),
               ],
             ),
           );
