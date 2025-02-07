@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../../features/videos/data/providers/video_provider.dart';
+import '../../../videos/data/providers/video_provider.dart';
+import '../../data/providers/class_provider.dart';
 
 // Provider to store the currently selected feed
 final selectedFeedProvider = StateProvider<String>((ref) => 'personal');
@@ -19,14 +20,62 @@ class FeedSelectionPill extends ConsumerStatefulWidget {
 }
 
 class _FeedSelectionPillState extends ConsumerState<FeedSelectionPill> {
+  String? _nonMemberClassName;
+
+  @override
+  void initState() {
+    super.initState();
+    _updateNonMemberClassName();
+  }
+
+  @override
+  void didUpdateWidget(FeedSelectionPill oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _updateNonMemberClassName();
+  }
+
+  Future<void> _updateNonMemberClassName() async {
+    final selectedFeed = ref.read(selectedFeedProvider);
+    if (selectedFeed != 'personal') {
+      // Check if this is a non-member class by looking in the memberships
+      final memberships = await FirebaseFirestore.instance
+          .collection('classMembership')
+          .where('userId', isEqualTo: FirebaseFirestore.instance.collection('users').doc(widget.userId))
+          .where('classId', isEqualTo: FirebaseFirestore.instance.collection('classes').doc(selectedFeed))
+          .get();
+      
+      if (memberships.docs.isEmpty) {
+        // Not a member, fetch the class name
+        final classDoc = await FirebaseFirestore.instance
+            .collection('classes')
+            .doc(selectedFeed)
+            .get();
+        
+        if (classDoc.exists && mounted) {
+          final data = classDoc.data();
+          if (data != null) {
+            setState(() {
+              _nonMemberClassName = data['title'] ?? 'Unknown Class';
+            });
+          }
+        }
+      }
+    }
+  }
+
+  bool _isUserMemberOfClass(String classId, List<Map<String, dynamic>> memberClasses) {
+    if (classId == 'personal') return true;
+    return memberClasses.any((c) => c['id'] == classId);
+  }
+
   @override
   Widget build(BuildContext context) {
     final selectedFeed = ref.watch(selectedFeedProvider);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      width: MediaQuery.of(context).size.width * 0.4, // Set width to 40% of screen width
-      alignment: Alignment.center, // Center the content
+      width: MediaQuery.of(context).size.width * 0.4,
+      alignment: Alignment.center,
       child: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('classMembership')
@@ -48,13 +97,8 @@ class _FeedSelectionPillState extends ConsumerState<FeedSelectionPill> {
             return const SizedBox.shrink();
           }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            // If no class memberships, just show personal feed
-            return _buildDropdown(selectedFeed, []);
-          }
-
-          // Process class memberships
-          final memberships = snapshot.data!.docs;
+          final memberships = snapshot.data?.docs ?? [];
+          
           return FutureBuilder<List<Map<String, dynamic>>>(
             future: Future.wait(
               memberships.map((doc) async {
@@ -92,7 +136,80 @@ class _FeedSelectionPillState extends ConsumerState<FeedSelectionPill> {
               }
 
               final classes = classesSnapshot.data ?? [];
-              return _buildDropdown(selectedFeed, classes);
+              
+              // If we're viewing a non-member class, show its name but don't include it in dropdown
+              String displayName;
+              if (selectedFeed == 'personal') {
+                displayName = 'Personal Feed';
+              } else if (_nonMemberClassName != null) {
+                displayName = _nonMemberClassName!;
+              } else {
+                final selectedClass = classes.firstWhere(
+                  (c) => c['id'] == selectedFeed,
+                  orElse: () => {'name': 'Loading...'},
+                );
+                displayName = selectedClass['name'];
+              }
+
+              // Create dropdown items
+              final List<DropdownMenuItem<String>> items = [
+                DropdownMenuItem(
+                  value: 'personal',
+                  child: _buildDropdownItem(
+                    'Personal Feed',
+                    Icons.star,
+                    Colors.amber,
+                  ),
+                ),
+              ];
+
+              // Add member classes to dropdown items
+              for (final membership in classes) {
+                items.add(
+                  DropdownMenuItem(
+                    value: membership['id'],
+                    child: _buildDropdownItem(
+                      membership['name'],
+                      membership['isCurator'] ? Icons.admin_panel_settings : Icons.group,
+                      membership['isCurator'] ? Colors.blue : Colors.grey,
+                    ),
+                  ),
+                );
+              }
+
+              // If viewing a non-member class, show it in the current display but not in dropdown
+              final bool isMemberOrPersonal = selectedFeed == 'personal' || 
+                classes.any((c) => c['id'] == selectedFeed);
+
+              return DropdownButtonHideUnderline(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: DropdownButton<String>(
+                    value: isMemberOrPersonal ? selectedFeed : null,
+                    icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
+                    dropdownColor: Colors.black.withOpacity(0.9),
+                    style: const TextStyle(color: Colors.white),
+                    hint: _buildDropdownItem(
+                      displayName,
+                      Icons.group,
+                      Colors.grey,
+                    ),
+                    items: items,
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        ref.read(selectedFeedProvider.notifier).state = newValue;
+                        ref.read(currentChannelIdProvider.notifier).state = 
+                          newValue == 'personal' ? null : newValue;
+                        ref.read(paginatedVideoProvider.notifier).refresh();
+                      }
+                    },
+                  ),
+                ),
+              );
             },
           );
         },
@@ -100,63 +217,17 @@ class _FeedSelectionPillState extends ConsumerState<FeedSelectionPill> {
     );
   }
 
-  Widget _buildDropdown(String selectedFeed, List<Map<String, dynamic>> classes) {
-    return DropdownButtonHideUnderline(
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: DropdownButton<String>(
-          value: selectedFeed,
-          icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-          dropdownColor: Colors.black.withOpacity(0.9),
+  Widget _buildDropdownItem(String text, IconData icon, Color iconColor) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: iconColor, size: 16),
+        const SizedBox(width: 8),
+        Text(
+          text,
           style: const TextStyle(color: Colors.white),
-          items: [
-            // Personal feed option
-            DropdownMenuItem(
-              value: 'personal',
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.star, color: Colors.amber, size: 16),
-                  const SizedBox(width: 8),
-                  const Text('Personal Feed'),
-                ],
-              ),
-            ),
-            // Class feed options
-            ...classes.map((membership) {
-              return DropdownMenuItem(
-                value: membership['id'],
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (membership['isCurator'])
-                      const Icon(Icons.admin_panel_settings,
-                          color: Colors.blue, size: 16)
-                    else
-                      const Icon(Icons.group, color: Colors.grey, size: 16),
-                    const SizedBox(width: 8),
-                    Text(membership['name']),
-                  ],
-                ),
-              );
-            }),
-          ],
-          onChanged: (String? newValue) {
-            if (newValue != null) {
-              ref.read(selectedFeedProvider.notifier).state = newValue;
-              // Update the channel ID (null for personal feed)
-              ref.read(currentChannelIdProvider.notifier).state = 
-                newValue == 'personal' ? null : newValue;
-              // Refresh the video feed
-              ref.read(paginatedVideoProvider.notifier).refresh();
-            }
-          },
         ),
-      ),
+      ],
     );
   }
 }
