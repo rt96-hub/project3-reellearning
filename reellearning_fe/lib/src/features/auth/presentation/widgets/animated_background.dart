@@ -97,9 +97,9 @@ class SymbolWidget extends StatefulWidget {
 
 class _SymbolWidgetState extends State<SymbolWidget> with TickerProviderStateMixin {
   late final AnimationController _positionController;
-  late final Animation<double> _positionAnimation;
   late final AnimationController _opacityController;
   late final Animation<double> _opacityAnimation;
+  Animation<double>? _positionAnimation;
 
   @override
   void initState() {
@@ -115,6 +115,14 @@ class _SymbolWidgetState extends State<SymbolWidget> with TickerProviderStateMix
       vsync: this,
       value: widget.opacityOffset, 
     );
+
+    _opacityAnimation = Tween<double>(
+      begin: 0.05,
+      end: 0.25,
+    ).animate(CurvedAnimation(
+      parent: _opacityController,
+      curve: Curves.easeInOut,
+    ));
 
     _positionController.repeat();
     _opacityController.repeat(reverse: true);
@@ -136,14 +144,6 @@ class _SymbolWidgetState extends State<SymbolWidget> with TickerProviderStateMix
       begin: startPosition,
       end: endPosition,
     ).animate(_positionController);
-
-    _opacityAnimation = Tween<double>(
-      begin: 0.05,
-      end: 0.25,
-    ).animate(CurvedAnimation(
-      parent: _opacityController,
-      curve: Curves.easeInOut,
-    ));
   }
 
   @override
@@ -161,11 +161,16 @@ class _SymbolWidgetState extends State<SymbolWidget> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    // Ensure position animation is set up
+    if (_positionAnimation == null) {
+      _setupAnimations();
+    }
+    
     return AnimatedBuilder(
-      animation: Listenable.merge([_positionAnimation, _opacityAnimation]),
+      animation: Listenable.merge([_positionController, _opacityAnimation]),
       builder: (context, child) {
         return Positioned(
-          left: _positionAnimation.value,
+          left: _positionAnimation!.value,
           top: 50.0 + (widget.index * 80),
           child: Opacity(
             opacity: _opacityAnimation.value,

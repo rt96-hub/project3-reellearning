@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class VideoUnderstandingButtons extends StatelessWidget {
+class VideoUnderstandingButtons extends StatefulWidget {
   final String videoId;
   final String? classId;
 
@@ -12,11 +12,85 @@ class VideoUnderstandingButtons extends StatelessWidget {
     this.classId,
   });
 
+  @override
+  State<VideoUnderstandingButtons> createState() => _VideoUnderstandingButtonsState();
+}
+
+class _VideoUnderstandingButtonsState extends State<VideoUnderstandingButtons> {
+  final Map<String, bool> _buttonCooldowns = {};
+  final List<OverlayEntry> _activeOverlays = [];
+
+  @override
+  void dispose() {
+    // Clean up any active overlays when the widget is disposed
+    for (final overlay in _activeOverlays) {
+      overlay.remove();
+    }
+    _activeOverlays.clear();
+    super.dispose();
+  }
+
+  void _showFloatingEmoji(String emoji, Offset startPosition) {
+    late final OverlayEntry overlay;
+    
+    overlay = OverlayEntry(
+      builder: (context) {
+        return TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 1500),
+          builder: (context, value, child) {
+            return Positioned(
+              left: startPosition.dx,
+              top: startPosition.dy - (value * 100), // Float upwards
+              child: Opacity(
+                opacity: 1.0 - value, // Fade out
+                child: Transform.scale(
+                  scale: 1.0 + (value * 0.5), // Slightly scale up
+                  child: Text(
+                    emoji,
+                    style: const TextStyle(fontSize: 24),
+                  ),
+                ),
+              ),
+            );
+          },
+          onEnd: () {
+            overlay.remove();
+            _activeOverlays.remove(overlay);
+          },
+        );
+      },
+    );
+
+    _activeOverlays.add(overlay);
+    Overlay.of(context).insert(overlay);
+  }
+
+  Future<void> _handleButtonPress(String level, String emoji, Offset position) async {
+    // Check cooldown
+    if (_buttonCooldowns[level] == true) return;
+
+    // Set cooldown
+    setState(() => _buttonCooldowns[level] = true);
+    
+    // Show floating emoji
+    _showFloatingEmoji(emoji, position);
+    
+    // Update comprehension
+    await _updateComprehension(level);
+    
+    // Reset cooldown after delay
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) {
+      setState(() => _buttonCooldowns[level] = false);
+    }
+  }
+
   Future<void> _updateComprehension(String level) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final docId = '${user.uid}_$videoId';
+    final docId = '${user.uid}_${widget.videoId}';
     final docRef = FirebaseFirestore.instance.collection('videoComprehension').doc(docId);
     
     try {
@@ -25,13 +99,11 @@ class VideoUnderstandingButtons extends StatelessWidget {
         final docSnapshot = await transaction.get(docRef);
         
         if (docSnapshot.exists) {
-          // Update existing document
           final currentData = docSnapshot.data() as Map<String, dynamic>;
           final currentClassIds = List<String>.from(currentData['classId'] ?? []);
           
-          // Only append classId if it's provided and not already in the array
-          if (classId != null && !currentClassIds.contains(classId)) {
-            currentClassIds.add(classId!);
+          if (widget.classId != null && !currentClassIds.contains(widget.classId)) {
+            currentClassIds.add(widget.classId!);
           }
           
           transaction.update(docRef, {
@@ -41,11 +113,10 @@ class VideoUnderstandingButtons extends StatelessWidget {
             'nextRecommendedReview': _calculateNextReview(level, now),
           });
         } else {
-          // Create new document
           final data = {
             'userId': user.uid,
-            'videoId': videoId,
-            'classId': classId != null ? [classId] : [],
+            'videoId': widget.videoId,
+            'classId': widget.classId != null ? [widget.classId] : [],
             'comprehensionLevel': level,
             'assessedAt': now,
             'updatedAt': now,
@@ -77,24 +148,34 @@ class VideoUnderstandingButtons extends StatelessWidget {
   Widget _buildUnderstandingButton({
     required String emoji,
     required Color color,
-    required VoidCallback onPressed,
+    required String level,
   }) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8),
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
-        child: Text(
-          emoji,
-          style: const TextStyle(fontSize: 20),
-        ),
+      child: Builder(
+        builder: (context) {
+          return ElevatedButton(
+            onPressed: _buttonCooldowns[level] == true
+                ? null
+                : () {
+                    final RenderBox renderBox = context.findRenderObject() as RenderBox;
+                    final position = renderBox.localToGlobal(Offset.zero);
+                    _handleButtonPress(level, emoji, position);
+                  },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: color,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: Text(
+              emoji,
+              style: const TextStyle(fontSize: 20),
+            ),
+          );
+        }
       ),
     );
   }
@@ -107,17 +188,17 @@ class VideoUnderstandingButtons extends StatelessWidget {
         _buildUnderstandingButton(
           emoji: '❓',
           color: Colors.red.shade400,
-          onPressed: () => _updateComprehension('not_understood'),
+          level: 'not_understood',
         ),
         _buildUnderstandingButton(
           emoji: '🤔',
           color: Colors.amber.shade400,
-          onPressed: () => _updateComprehension('partially_understood'),
+          level: 'partially_understood',
         ),
         _buildUnderstandingButton(
           emoji: '🧠',
           color: Colors.green.shade400,
-          onPressed: () => _updateComprehension('fully_understood'),
+          level: 'fully_understood',
         ),
       ],
     );
