@@ -8,6 +8,7 @@ import 'package:reellearning_fe/src/features/videos/data/providers/video_state_p
 import 'package:reellearning_fe/src/features/videos/presentation/widgets/video_player_widget.dart';
 import '../widgets/video_action_buttons.dart';
 import '../widgets/video_understanding_buttons.dart';
+import '../widgets/feed_selection_pill.dart';
 
 // Add this provider at the top of the file with other providers
 final currentVideoIndexProvider = StateProvider<int>((ref) => 0);
@@ -71,14 +72,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               scrollDirection: Axis.vertical,
               itemCount: videos.length,
               itemBuilder: (context, index) {
-                return Center(
-                  child: VideoPlayerWidget(
-                    video: videos[index],
-                    autoPlay: index == currentIndex,
-                    looping: true,
-                    isMuted: _isMuted,
-                    onMuteChanged: (muted) => setState(() => _isMuted = muted),
-                  ),
+                return Stack(
+                  children: [
+                    Center(
+                      child: VideoPlayerWidget(
+                        video: videos[index],
+                        autoPlay: index == currentIndex,
+                        looping: true,
+                        isMuted: _isMuted,
+                        onMuteChanged: (muted) => setState(() => _isMuted = muted),
+                      ),
+                    ),
+                    // Add feed selection pill at the top
+                    if (userProfile != null)
+                      Positioned(
+                        top: MediaQuery.of(context).padding.top + 16,
+                        left: 0,
+                        right: 0,
+                        child: FeedSelectionPill(userId: userProfile.uid),
+                      ),
+                  ],
                 );
               },
             ),

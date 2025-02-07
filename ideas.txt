@@ -49,7 +49,7 @@ x when the app is minimized, it stays on the page when they reopen
 x like and bookmark should work if they dont have a class!!!!!!
     x right now it doesn't show the personal feed option if they are in no classes (just no classes at all, if they are a member of a class, they dont see the regular class record(which is correct) but they still see the personal feed option)
         
-
+cloud func
 
 bottom bar should be:
 - feed
