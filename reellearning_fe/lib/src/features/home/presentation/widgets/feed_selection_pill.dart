@@ -200,11 +200,14 @@ class _FeedSelectionPillState extends ConsumerState<FeedSelectionPill> {
                     ),
                     items: items,
                     onChanged: (String? newValue) {
-                      if (newValue != null) {
+                      if (newValue != null && newValue != selectedFeed) {
+                        print('[FeedSelectionPill] Switching feed from $selectedFeed to $newValue');
                         ref.read(selectedFeedProvider.notifier).state = newValue;
                         ref.read(currentChannelIdProvider.notifier).state = 
                           newValue == 'personal' ? null : newValue;
                         ref.read(paginatedVideoProvider.notifier).refresh();
+                      } else {
+                        print('[FeedSelectionPill] Feed $newValue already selected, skipping refresh');
                       }
                     },
                   ),
