@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../home/presentation/widgets/video_action_buttons.dart';
 import '../../../home/presentation/widgets/video_understanding_buttons.dart';
 import '../widgets/video_player_widget.dart';
@@ -118,23 +119,92 @@ class _FilteredVideoFeedScreenState extends ConsumerState<FilteredVideoFeedScree
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    currentVideo.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    currentVideo.description,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // User Avatar
+                      StreamBuilder<DocumentSnapshot>(
+                        stream: (currentVideo.creator as DocumentReference).snapshots(),
+                        builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+                          if (!snapshot.hasData) {
+                            return const CircleAvatar(
+                              radius: 20,
+                              child: Icon(Icons.person),
+                            );
+                          }
+
+                          final userData = snapshot.data!.data() as Map<String, dynamic>;
+                          final profile = userData['profile'] as Map<String, dynamic>? ?? {};
+                          final creatorId = snapshot.data!.id;
+
+                          return GestureDetector(
+                            onTap: () => context.go('/profile/$creatorId'),
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundImage: profile['avatarUrl'] != null
+                                  ? NetworkImage(profile['avatarUrl'])
+                                  : null,
+                              child: profile['avatarUrl'] == null
+                                  ? const Icon(Icons.person)
+                                  : null,
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      // Text Content
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              currentVideo.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            // Creator Name
+                            StreamBuilder<DocumentSnapshot>(
+                              stream: (currentVideo.creator as DocumentReference).snapshots(),
+                              builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+                                if (!snapshot.hasData) {
+                                  return const SizedBox.shrink();
+                                }
+
+                                final userData = snapshot.data!.data() as Map<String, dynamic>;
+                                final profile = userData['profile'] as Map<String, dynamic>? ?? {};
+                                final creatorId = snapshot.data!.id;
+
+                                return GestureDetector(
+                                  onTap: () => context.go('/profile/$creatorId'),
+                                  child: Text(
+                                    profile['displayName'] ?? 'Unknown User',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              currentVideo.description,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

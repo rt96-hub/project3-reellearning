@@ -131,26 +131,95 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    videos[currentIndex].title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  GestureDetector(
-                    onTap: () => setState(() => _showFullDescription = !_showFullDescription),
-                    child: Text(
-                      videos[currentIndex].description,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // User Avatar
+                      StreamBuilder<DocumentSnapshot>(
+                        stream: (videos[currentIndex].creator as DocumentReference).snapshots(),
+                        builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+                          if (!snapshot.hasData) {
+                            return const CircleAvatar(
+                              radius: 20,
+                              child: Icon(Icons.person),
+                            );
+                          }
+
+                          final userData = snapshot.data!.data() as Map<String, dynamic>;
+                          final profile = userData['profile'] as Map<String, dynamic>? ?? {};
+                          final creatorId = snapshot.data!.id;
+
+                          return GestureDetector(
+                            onTap: () => context.go('/profile/$creatorId'),
+                            child: CircleAvatar(
+                              radius: 20,
+                              backgroundImage: profile['avatarUrl'] != null
+                                  ? NetworkImage(profile['avatarUrl'])
+                                  : null,
+                              child: profile['avatarUrl'] == null
+                                  ? const Icon(Icons.person)
+                                  : null,
+                            ),
+                          );
+                        },
                       ),
-                      maxLines: _showFullDescription ? null : 2,
-                      overflow: _showFullDescription ? null : TextOverflow.ellipsis,
-                    ),
+                      const SizedBox(width: 12),
+                      // Text Content
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              videos[currentIndex].title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            // Creator Name
+                            StreamBuilder<DocumentSnapshot>(
+                              stream: (videos[currentIndex].creator as DocumentReference).snapshots(),
+                              builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+                                if (!snapshot.hasData) {
+                                  return const SizedBox.shrink();
+                                }
+
+                                final userData = snapshot.data!.data() as Map<String, dynamic>;
+                                final profile = userData['profile'] as Map<String, dynamic>? ?? {};
+                                final creatorId = snapshot.data!.id;
+
+                                return GestureDetector(
+                                  onTap: () => context.go('/profile/$creatorId'),
+                                  child: Text(
+                                    profile['displayName'] ?? 'Unknown User',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 4),
+                            GestureDetector(
+                              onTap: () => setState(() => _showFullDescription = !_showFullDescription),
+                              child: Text(
+                                videos[currentIndex].description,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                                maxLines: _showFullDescription ? null : 2,
+                                overflow: _showFullDescription ? null : TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
