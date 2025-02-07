@@ -93,183 +93,80 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               scrollDirection: Axis.vertical,
               itemCount: videos.length,
               itemBuilder: (context, index) {
-                return Stack(
-                  children: [
-                    Center(
-                      child: VideoPlayerWidget(
-                        video: videos[index],
-                        autoPlay: index == currentIndex,
-                        looping: true,
-                        isMuted: _isMuted,
-                        onMuteChanged: (muted) => setState(() => _isMuted = muted),
-                      ),
-                    ),
-                    // Add feed selection pill at the top
-                    if (userProfile != null)
-                      Positioned(
-                        top: MediaQuery.of(context).padding.top + 48, // Aligned with mute button
-                        left: 0,
-                        right: 0,
-                        child: Center(
-                          child: FeedSelectionPill(userId: userProfile.uid),
-                        ),
-                      ),
-                  ],
+                return VideoPlayerWidget(
+                  video: videos[index],
+                  autoPlay: index == currentIndex,
+                  isMuted: _isMuted,
+                  onMuteChanged: (muted) => setState(() => _isMuted = muted),
                 );
               },
             ),
 
-          // Video Info Overlay
-          Positioned(
-            bottom: 80,
-            left: 0,
-            right: 0,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: videos.isEmpty
-                  ? const Center(child: CircularProgressIndicator())
-                  : Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // User Avatar and Profile Section
-                            StreamBuilder<DocumentSnapshot>(
-                              stream: (videos[currentIndex].creator
-                                      as DocumentReference)
-                                  .snapshots(),
-                              builder: (context,
-                                  AsyncSnapshot<DocumentSnapshot> snapshot) {
-                                if (!snapshot.hasData) {
-                                  return const CircleAvatar(
-                                    radius: 20,
-                                    child: Icon(Icons.person),
-                                  );
-                                }
-
-                                final userData = snapshot.data!.data()
-                                    as Map<String, dynamic>;
-                                final profile = userData['profile']
-                                        as Map<String, dynamic>? ??
-                                    {};
-                                final creatorId = snapshot.data!.id;
-
-                                return GestureDetector(
-                                  onTap: () =>
-                                      context.go('/profile/$creatorId'),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      CircleAvatar(
-                                        radius: 20,
-                                        backgroundImage: profile['avatarUrl'] !=
-                                                null
-                                            ? NetworkImage(profile['avatarUrl'])
-                                            : null,
-                                        child: profile['avatarUrl'] == null
-                                            ? const Icon(Icons.person)
-                                            : null,
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 12),
-                            // Video Info
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    videos[currentIndex].title,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  // Creator Name
-                                  StreamBuilder<DocumentSnapshot>(
-                                    stream: (videos[currentIndex].creator
-                                            as DocumentReference)
-                                        .snapshots(),
-                                    builder: (context,
-                                        AsyncSnapshot<DocumentSnapshot>
-                                            snapshot) {
-                                      if (!snapshot.hasData) {
-                                        return const SizedBox.shrink();
-                                      }
-
-                                      final userData = snapshot.data!.data()
-                                          as Map<String, dynamic>;
-                                      final profile = userData['profile']
-                                              as Map<String, dynamic>? ??
-                                          {};
-                                      final creatorId = snapshot.data!.id;
-
-                                      return GestureDetector(
-                                        onTap: () =>
-                                            context.go('/profile/$creatorId'),
-                                        child: Text(
-                                          profile['displayName'] ??
-                                              'Unknown User',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 14,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 4),
-                                  GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        _showFullDescription =
-                                            !_showFullDescription;
-                                      });
-                                    },
-                                    child: Text(
-                                      videos[currentIndex].description,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                      ),
-                                      maxLines: _showFullDescription ? null : 2,
-                                      overflow: _showFullDescription
-                                          ? null
-                                          : TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        VideoUnderstandingButtons(
-                          videoId: videos[currentIndex].id,
-                          // at some point we will pass classId here (if we create a separate class feed file we need to look at it)
-                        ),
-                      ],
-                    ),
+          // Feed Selection Pill (Overlay)
+          if (userProfile != null)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 8,
+              left: 0,
+              right: 0,
+              child: FeedSelectionPill(userId: userProfile.uid),
             ),
-          ),
 
-          // Right Side Action Buttons
-          Positioned(
-            right: 16,
-            bottom: 100,
-            child: videos.isEmpty
-                ? const SizedBox()
-                : VideoActionButtons(
-                    videoId: videos[currentIndex].id,
-                    likeCount: videos[currentIndex].engagement.likes,
+          // Video Actions (Overlay)
+          if (videos.isNotEmpty)
+            Positioned(
+              right: 8,
+              bottom: 80,
+              child: VideoActionButtons(
+                videoId: videos[currentIndex].id,
+                likeCount: videos[currentIndex].engagement.likes,
+              ),
+            ),
+
+          // Video Info Overlay
+          if (videos.isNotEmpty)
+            Positioned(
+              left: 16,
+              right: 48, // Leave space for action buttons
+              bottom: 120,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    videos[currentIndex].title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-          ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
+                    onTap: () => setState(() => _showFullDescription = !_showFullDescription),
+                    child: Text(
+                      videos[currentIndex].description,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                      maxLines: _showFullDescription ? null : 2,
+                      overflow: _showFullDescription ? null : TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          // Understanding Buttons (Overlay)
+          if (videos.isNotEmpty && userProfile != null)
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16,
+              child: VideoUnderstandingButtons(
+                videoId: videos[currentIndex].id,
+              ),
+            ),
         ],
       ),
     );

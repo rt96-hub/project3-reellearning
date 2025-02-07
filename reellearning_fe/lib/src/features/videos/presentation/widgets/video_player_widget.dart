@@ -161,27 +161,54 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
     super.dispose();
   }
 
+  // Calculate the optimal scale factor to fill either width or height
+  double _calculateOptimalScale(BuildContext context) {
+    if (_controller == null) return 1.0;
+    
+    final screenSize = MediaQuery.of(context).size;
+    final videoSize = _controller!.value.size;
+    
+    // Calculate how much we need to scale to match width and height
+    final scaleWidth = screenSize.width / (videoSize.width * _controller!.value.aspectRatio);
+    final scaleHeight = screenSize.height / (videoSize.height / _controller!.value.aspectRatio);
+    
+    // Use the smaller scale to ensure video fits within screen bounds
+    return scaleWidth > scaleHeight ? scaleWidth : scaleHeight;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        // Video Player with Tap Handlers
-        GestureDetector(
-          onTap: _togglePlayPause,
-          onDoubleTapDown: (details) => _handleDoubleTapDown(details, context),
-          behavior: HitTestBehavior.opaque,
-          child: Center(
-            child: _isInitialized && _controller != null
-              ? AspectRatio(
-                  aspectRatio: _controller!.value.aspectRatio,
-                  child: VideoPlayer(_controller!),
-                )
-              : const CircularProgressIndicator(),
-          ),
-        ),
+    if (!_isInitialized || _controller == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
-        // Progress Bar (Always Visible)
-        if (_isInitialized && _controller != null)
+    return GestureDetector(
+      onTap: _togglePlayPause,
+      onDoubleTapDown: (details) => _handleDoubleTapDown(details, context),
+      child: Stack(
+        children: [
+          // Video Container that fills the screen
+          Container(
+            width: MediaQuery.of(context).size.width,
+            height: MediaQuery.of(context).size.height,
+            color: Colors.black,
+            child: Transform.scale(
+              scale: _calculateOptimalScale(context),
+              child: AspectRatio(
+                aspectRatio: _controller!.value.aspectRatio,
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: SizedBox(
+                    width: _controller!.value.size.width,
+                    height: _controller!.value.size.height,
+                    child: VideoPlayer(_controller!),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Progress Bar (Always Visible)
           Positioned(
             left: 0,
             right: 0,
@@ -214,45 +241,44 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
             ),
           ),
 
-        // Seek Overlay
-        if (_showSeekOverlay && _isInitialized && _controller != null)
-          Positioned(
-            left: _seekDirection == 'backward' ? 32 : null,
-            right: _seekDirection == 'forward' ? 32 : null,
-            top: MediaQuery.of(context).size.height / 2 - 25,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
-                shape: BoxShape.circle,
-              ),
-              padding: const EdgeInsets.all(12),
-              child: Icon(
-                _seekDirection == 'forward' ? Icons.forward_5 : Icons.replay_5,
-                color: Colors.white,
-                size: 50,
-              ),
-            ),
-          ),
-
-        // Play/Pause Overlay
-        if (_showPlayPauseOverlay && _isInitialized && _controller != null)
-          Center(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
-                shape: BoxShape.circle,
-              ),
-              padding: const EdgeInsets.all(12),
-              child: Icon(
-                _controller!.value.isPlaying ? Icons.pause : Icons.play_arrow,
-                color: Colors.white,
-                size: 50,
+          // Seek Overlay
+          if (_showSeekOverlay)
+            Positioned(
+              left: _seekDirection == 'backward' ? 32 : null,
+              right: _seekDirection == 'forward' ? 32 : null,
+              top: MediaQuery.of(context).size.height / 2 - 25,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                padding: const EdgeInsets.all(12),
+                child: Icon(
+                  _seekDirection == 'forward' ? Icons.forward_5 : Icons.replay_5,
+                  color: Colors.white,
+                  size: 50,
+                ),
               ),
             ),
-          ),
 
-        // Mute/Unmute Button
-        if (_isInitialized && _controller != null)
+          // Play/Pause Overlay
+          if (_showPlayPauseOverlay)
+            Center(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                padding: const EdgeInsets.all(12),
+                child: Icon(
+                  _controller!.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                  color: Colors.white,
+                  size: 50,
+                ),
+              ),
+            ),
+
+          // Mute/Unmute Button
           Positioned(
             top: 48,
             right: 16,
@@ -272,7 +298,8 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
               ),
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
 } 
