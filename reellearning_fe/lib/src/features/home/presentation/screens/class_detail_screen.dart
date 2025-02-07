@@ -17,7 +17,8 @@ class ClassDetailScreen extends ConsumerWidget {
     required this.classId,
   });
 
-  Widget _buildCreatorInfo(BuildContext context, WidgetRef ref, DocumentReference creatorRef) {
+  Widget _buildCreatorInfo(
+      BuildContext context, WidgetRef ref, DocumentReference creatorRef) {
     final userData = ref.watch(userDataProvider(creatorRef));
 
     return userData.when(
@@ -29,9 +30,8 @@ class ClassDetailScreen extends ConsumerWidget {
               backgroundImage: data['avatarUrl'] != null
                   ? NetworkImage(data['avatarUrl'])
                   : null,
-              child: data['avatarUrl'] == null
-                  ? const Icon(Icons.person)
-                  : null,
+              child:
+                  data['avatarUrl'] == null ? const Icon(Icons.person) : null,
             ),
             const SizedBox(width: 8),
             Column(
@@ -54,7 +54,8 @@ class ClassDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildJoinLeaveButton(BuildContext context, WidgetRef ref, ClassModel classModel) {
+  Widget _buildJoinLeaveButton(
+      BuildContext context, WidgetRef ref, ClassModel classModel) {
     final currentUser = ref.watch(currentUserProvider);
     if (currentUser == null) return const SizedBox.shrink();
 

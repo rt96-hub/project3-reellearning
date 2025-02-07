@@ -222,6 +222,7 @@ x maybe include a search page
         - posted videos (from profiles)
         - bookmarked videos (from own profile and classes)
             - need to add bookmarked vids button on classes
+            - will comment out the class bookmark button for now
         - liked videos (from personal profile)
         - page layout
         - get videos

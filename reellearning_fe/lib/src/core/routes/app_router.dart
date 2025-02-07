@@ -146,20 +146,29 @@ final routerProvider = Provider<GoRouter>((ref) {
                       ),
                       GoRoute(
                         path: 'videos',
-                        builder: (context, state) => const VideoGridScreen(
+                        builder: (context, state) => VideoGridScreen(
                           title: 'Your Videos',
+                          sourceType: 'user',
+                          sourceId: authState.value?.uid ?? '',
+                          videoType: 'videos',
                         ),
                       ),
                       GoRoute(
                         path: 'liked-videos',
-                        builder: (context, state) => const VideoGridScreen(
+                        builder: (context, state) => VideoGridScreen(
                           title: 'Your Likes',
+                          sourceType: 'user',
+                          sourceId: authState.value?.uid ?? '',
+                          videoType: 'likes',
                         ),
                       ),
                       GoRoute(
                         path: 'bookmarked',
-                        builder: (context, state) => const VideoGridScreen(
+                        builder: (context, state) => VideoGridScreen(
                           title: 'Your Bookmarks',
+                          sourceType: 'user',
+                          sourceId: authState.value?.uid ?? '',
+                          videoType: 'bookmarks',
                         ),
                       ),
                     ],
@@ -174,6 +183,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                         path: 'videos',
                         builder: (context, state) => VideoGridScreen(
                           title: '${(state.extra as Map<String, dynamic>)['displayName'] as String} Videos',
+                          sourceType: 'user',
+                          sourceId: state.pathParameters['userId']!,
+                          videoType: 'videos',
                         ),
                       ),
                       GoRoute(
@@ -229,6 +241,9 @@ final routerProvider = Provider<GoRouter>((ref) {
                             path: 'bookmarked',
                             builder: (context, state) => VideoGridScreen(
                               title: '${(state.extra as Map<String, dynamic>)['className'] as String} Bookmarks',
+                              sourceType: 'class',
+                              sourceId: state.pathParameters['classId']!,
+                              videoType: 'bookmarks',
                             ),
                           ),
                         ],
