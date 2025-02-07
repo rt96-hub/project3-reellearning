@@ -218,7 +218,15 @@ x maybe include a search page
     - as a student, I want to view videos from specific creators
         - still need the video grid page with custom feed
 
+    - video grid pages:
+        - posted videos (from profiles)
+        - bookmarked videos (from own profile and classes)
+            - need to add bookmarked vids button on classes
+        - liked videos (from personal profile)
+        - need a modified video provider that just has "ALL" the videos, or another function that fetches paginated lists of videos in order
+
     - videos PAUSE when you go to a different page
+    - random back navigation stuff
 
     - direct messages???
     - search???
