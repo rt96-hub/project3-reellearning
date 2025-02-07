@@ -324,15 +324,16 @@ def get_filtered_videos(req: https_fn.Request) -> https_fn.Response:
     try:
         if source_type == 'user':
             if video_type == 'likes':
-                # Get user's liked videos
+                # Get user's liked videos by userId field
                 likes_ref = db.collection('userLikes')
-                likes = likes_ref.where('userId', '==', source_id).get()
+                user_ref = db.collection('users').document(source_id)
+                likes = likes_ref.where('userId', '==', user_ref).get()
                 
                 # Get the video documents for each like
                 for like in likes:
-                    video_id = like.get('videoId')
-                    if video_id:
-                        video_doc = videos_ref.document(video_id).get()
+                    video_ref = like.get('videoId')
+                    if video_ref:
+                        video_doc = video_ref.get()
                         if video_doc.exists:
                             data = video_doc.to_dict()
                             metadata = data.get('metadata', {})
@@ -368,15 +369,16 @@ def get_filtered_videos(req: https_fn.Request) -> https_fn.Response:
                             videos.append(video)
 
             elif video_type == 'bookmarks':
-                # Get user's bookmarked videos
+                # Get user's bookmarked videos by userId field
                 bookmarks_ref = db.collection('userBookmarks')
-                bookmarks = bookmarks_ref.where('userId', '==', source_id).get()
+                user_ref = db.collection('users').document(source_id)
+                bookmarks = bookmarks_ref.where('userId', '==', user_ref).get()
                 
                 # Get the video documents for each bookmark
                 for bookmark in bookmarks:
-                    video_id = bookmark.get('videoId')
-                    if video_id:
-                        video_doc = videos_ref.document(video_id).get()
+                    video_ref = bookmark.get('videoId')
+                    if video_ref:
+                        video_doc = video_ref.get()
                         if video_doc.exists:
                             data = video_doc.to_dict()
                             metadata = data.get('metadata', {})
