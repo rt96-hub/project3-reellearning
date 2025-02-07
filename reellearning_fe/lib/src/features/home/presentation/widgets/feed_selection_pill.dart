@@ -24,6 +24,8 @@ class _FeedSelectionPillState extends ConsumerState<FeedSelectionPill> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      width: MediaQuery.of(context).size.width * 0.4, // Set width to 40% of screen width
+      alignment: Alignment.center, // Center the content
       child: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('classMembership')

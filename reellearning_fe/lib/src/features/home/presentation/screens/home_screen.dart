@@ -86,10 +86,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     // Add feed selection pill at the top
                     if (userProfile != null)
                       Positioned(
-                        top: MediaQuery.of(context).padding.top + 16,
+                        top: MediaQuery.of(context).padding.top + 48, // Aligned with mute button
                         left: 0,
                         right: 0,
-                        child: FeedSelectionPill(userId: userProfile.uid),
+                        child: Center(
+                          child: FeedSelectionPill(userId: userProfile.uid),
+                        ),
                       ),
                   ],
                 );
