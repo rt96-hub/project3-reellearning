@@ -8,12 +8,10 @@ import 'package:reellearning_fe/src/features/videos/presentation/widgets/class_s
 
 class VideoActionButtons extends ConsumerStatefulWidget {
   final String videoId;
-  final int likeCount;
 
   const VideoActionButtons({
     super.key,
     required this.videoId,
-    required this.likeCount,
   });
 
   @override
@@ -22,16 +20,13 @@ class VideoActionButtons extends ConsumerStatefulWidget {
 
 class _VideoActionButtonsState extends ConsumerState<VideoActionButtons> {
   bool isLiked = false;
-  late int currentLikeCount;
   bool isBookmarked = false;
   
   @override
   void initState() {
     super.initState();
-    currentLikeCount = widget.likeCount;
     _checkIfLiked();
     _checkIfBookmarked();
-    _setupLikeCountListener();
   }
   
   @override
@@ -40,7 +35,6 @@ class _VideoActionButtonsState extends ConsumerState<VideoActionButtons> {
     if (oldWidget.videoId != widget.videoId) {
       // Reset state when video changes
       setState(() {
-        currentLikeCount = widget.likeCount;
         isLiked = false;
         isBookmarked = false;
       });
@@ -127,59 +121,29 @@ class _VideoActionButtonsState extends ConsumerState<VideoActionButtons> {
     );
   }
 
-  void _setupLikeCountListener() {
-    FirebaseFirestore.instance
-        .collection('videos')
-        .doc(widget.videoId)
-        .snapshots()
-        .listen((snapshot) {
-      if (snapshot.exists) {
-        final data = snapshot.data()!;
-        final engagement = data['engagement'] ?? {};
-        setState(() {
-          currentLikeCount = engagement['likes'] ?? 0;
-        });
-      }
-    });
-  }
-
   Widget _buildActionButton({
     required IconData icon,
     required VoidCallback onPressed,
     bool isFilled = false,
     Color? fillColor,
-    String? count,
   }) {
-    return Column(
-      children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: 4),
-          decoration: BoxDecoration(
-            color: Colors.black54,
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            icon: Icon(
-              icon,
-              color: isFilled ? fillColor ?? Colors.white : Colors.white,
-              size: 28,
-            ),
-            onPressed: onPressed,
-            style: IconButton.styleFrom(
-              backgroundColor: Colors.transparent,
-            ),
-          ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 4),
+      decoration: BoxDecoration(
+        color: Colors.black54,
+        shape: BoxShape.circle,
+      ),
+      child: IconButton(
+        icon: Icon(
+          icon,
+          color: isFilled ? fillColor ?? Colors.white : Colors.white,
+          size: 28,
         ),
-        if (count != null)
-          Text(
-            count,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-      ],
+        onPressed: onPressed,
+        style: IconButton.styleFrom(
+          backgroundColor: Colors.transparent,
+        ),
+      ),
     );
   }
 
@@ -193,7 +157,6 @@ class _VideoActionButtonsState extends ConsumerState<VideoActionButtons> {
           onPressed: _handleLike,
           isFilled: isLiked,
           fillColor: Colors.red,
-          count: currentLikeCount > 0 ? currentLikeCount.toString() : null,
         ),
         const SizedBox(height: 8),
         _buildActionButton(

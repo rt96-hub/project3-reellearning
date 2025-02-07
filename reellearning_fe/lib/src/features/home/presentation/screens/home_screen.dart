@@ -118,7 +118,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               bottom: 80,
               child: VideoActionButtons(
                 videoId: videos[currentIndex].id,
-                likeCount: videos[currentIndex].engagement.likes,
               ),
             ),
 
