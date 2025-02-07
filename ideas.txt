@@ -207,12 +207,16 @@ x maybe include a search page
 
 
 - user journeys:
-    - as a student, I want to mark my comprehension of a video to help me progress, identify high quality content with likes, and save videos for later
-    - as a student, I want to participate in discussions about a video
-    - as a student, I want to make specialized feeds that cater to my interests
-    - as a student, I want to join specialized feeds that are curated by other "influencers"
+    x as a student, I want to mark my comprehension of a video to help me progress, identify high quality content with likes, and save videos for later
+        - still need the video grid page with custom feed
+    x as a student, I want to participate in discussions about a video
+        - add comment replies
+    x as a student, I want to make specialized feeds that cater to my interests
+    x as a student, I want to join specialized feeds that are curated by other "influencers"
     - as a student, I want to view videos that I have saved for later
+        - still need the video grid page with custom feed
     - as a student, I want to view videos from specific creators
+        - still need the video grid page with custom feed
 
     - direct messages???
     - search???
