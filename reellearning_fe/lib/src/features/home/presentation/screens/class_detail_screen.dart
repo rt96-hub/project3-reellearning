@@ -6,6 +6,8 @@ import '../../../auth/data/providers/auth_provider.dart';
 import '../../../auth/data/providers/user_provider.dart';
 import '../../data/models/class_model.dart';
 import '../../data/providers/class_provider.dart';
+import '../../../videos/data/providers/video_provider.dart';
+import '../widgets/feed_selection_pill.dart';
 
 class ClassDetailScreen extends ConsumerWidget {
   final String classId;
@@ -99,12 +101,18 @@ class ClassDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildShowFeedButton(BuildContext context) {
+  Widget _buildShowFeedButton(BuildContext context, WidgetRef ref) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: () {
-          // TODO: This will bring the user to the video feed tailored for this class
+          // Set the channel ID to this class's ID
+          ref.read(currentChannelIdProvider.notifier).state = classId;
+          ref.read(selectedFeedProvider.notifier).state = classId;
+          // Refresh the video feed
+          ref.read(paginatedVideoProvider.notifier).refresh();
+          // Navigate to home screen
+          context.go('/');
         },
         icon: const Icon(Icons.play_circle_outline),
         label: const Text('Show Feed'),
@@ -224,12 +232,10 @@ class ClassDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Show Feed Button
-                _buildShowFeedButton(context),
-                const SizedBox(height: 12),
-
-                // Join/Leave Button
+                // Join/Leave and Show Feed Buttons
                 _buildJoinLeaveButton(context, ref, classModel),
+                const SizedBox(height: 8),
+                _buildShowFeedButton(context, ref),
               ],
             ),
           );
@@ -260,4 +266,4 @@ class ClassDetailScreen extends ConsumerWidget {
       ),
     );
   }
-} 
+}
