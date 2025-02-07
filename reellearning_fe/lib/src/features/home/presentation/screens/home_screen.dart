@@ -29,6 +29,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     _pageController.addListener(_handlePageChange);
+    
+    // Initialize personal feed when user logs in
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final userProfile = ref.read(currentUserProvider);
+      if (userProfile != null) {
+        ref.read(currentChannelIdProvider.notifier).state = null;
+        ref.read(selectedFeedProvider.notifier).state = 'personal';
+        ref.read(paginatedVideoProvider.notifier).refresh();
+      }
+    });
   }
 
   @override

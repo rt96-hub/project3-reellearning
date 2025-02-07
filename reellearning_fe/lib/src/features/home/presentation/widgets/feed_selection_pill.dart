@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../features/videos/data/providers/video_provider.dart';
 
 // Provider to store the currently selected feed
 final selectedFeedProvider = StateProvider<String>((ref) => 'personal');
@@ -147,7 +148,11 @@ class _FeedSelectionPillState extends ConsumerState<FeedSelectionPill> {
           onChanged: (String? newValue) {
             if (newValue != null) {
               ref.read(selectedFeedProvider.notifier).state = newValue;
-              // TODO: Implement feed switching logic here
+              // Update the channel ID (null for personal feed)
+              ref.read(currentChannelIdProvider.notifier).state = 
+                newValue == 'personal' ? null : newValue;
+              // Refresh the video feed
+              ref.read(paginatedVideoProvider.notifier).refresh();
             }
           },
         ),

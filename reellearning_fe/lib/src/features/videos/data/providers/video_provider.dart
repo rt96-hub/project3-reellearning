@@ -86,6 +86,9 @@ Future<String> getVideoUrl(String videoPath) async {
   }
 }
 
+// Provider to track current channel ID (null means personal feed)
+final currentChannelIdProvider = StateProvider<String?>((ref) => null);
+
 class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
   PaginatedVideoNotifier(this.ref) : super([]) {
     _fetchNextBatch();
@@ -112,9 +115,18 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
       }
       final token = await user.getIdToken();
       
+      // Get current channel ID
+      final channelId = ref.read(currentChannelIdProvider);
+      
+      // Build URL with channel ID if present
+      var url = Uri.parse('$_functionUrl?limit=$_batchSize');
+      if (channelId != null) {
+        url = Uri.parse('$_functionUrl?limit=$_batchSize&channel_id=$channelId');
+      }
+      
       // Make request to our cloud function
       final response = await http.get(
-        Uri.parse('$_functionUrl?limit=$_batchSize'),
+        url,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
