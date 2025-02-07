@@ -42,6 +42,13 @@ x on account creation
             - preload x seconds of the videos 2 above and below maybe??
             - how does streaming work, where we download as we watch it?
 
+
+x add dropdown to the feed to select channels
+    x add user and channel id to function request
+    ? pass user and channel id to function request
+    - rerender page after changing channel
+
+
 x The user's login info/status needs to be stored on the device so they can be logged in when they reopen
 x implement the back drag gesture for navigation(maybe not)
 x when the app is minimized, it stays on the page when they reopen
@@ -82,8 +89,8 @@ bottom bar should be:
     x slide the screen down to see more videos
         x repeat
         - when you leave the feed, the autoplay should stop, maybe just get paused (right now I hear the audio still playing)
-        - forever (do infinite/random stuff)
-        - some kind of find next video(s) function in firebase???
+        x forever (do infinite/random stuff)
+        x some kind of find next video(s) function in firebase???
 
 
 - messages

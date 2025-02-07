@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/video_model.dart';
 import './video_state_provider.dart';
 
@@ -104,10 +105,20 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
     try {
       _isLoading = true;
       
+      // Get the current user's ID token
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
+      }
+      final token = await user.getIdToken();
+      
       // Make request to our cloud function
       final response = await http.get(
         Uri.parse('$_functionUrl?limit=$_batchSize'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
       
       if (response.statusCode == 200) {

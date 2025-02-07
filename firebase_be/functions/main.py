@@ -1,5 +1,5 @@
 from firebase_functions import https_fn
-from firebase_admin import initialize_app, firestore
+from firebase_admin import initialize_app, firestore, auth
 from datetime import datetime, timedelta
 import json
 import random
@@ -56,12 +56,59 @@ def get_creator_path(data):
 
 @https_fn.on_request()
 def get_videos(req: https_fn.Request) -> https_fn.Response:
+    # Set CORS headers for all responses
+    cors_headers = {
+        'Access-Control-Allow-Origin': '*',  # In production, you might want to restrict this
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '3600',
+    }
+    
+    # Handle OPTIONS request (preflight)
+    if req.method == 'OPTIONS':
+        return https_fn.Response(
+            '',
+            headers=cors_headers,
+            status=204
+        )
+    
+    # Get the Authorization header
+    auth_header = req.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return https_fn.Response(
+            json.dumps({'error': 'Unauthorized - Invalid token format'}),
+            status=401,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+    
+    # Extract and verify the token
+    token = auth_header.split('Bearer ')[1]
+    try:
+        # Verify the Firebase token
+        decoded_token = auth.verify_id_token(token)
+        user_id = decoded_token['uid']
+    except Exception as e:
+        return https_fn.Response(
+            json.dumps({'error': f'Unauthorized - Invalid token: {str(e)}'}),
+            status=401,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+
+    # Get user_id and class_id from query parameters
+    # Note: We now have the verified user_id from the token, but we'll still accept it from params
+    # for flexibility (though in production you might want to enforce they match)
+    user_id_param = req.args.get('user_id', user_id)  # Default to the token's user_id
+    class_id = req.args.get('class_id', None)
+    
+    # Note: Currently these parameters don't affect the video selection
+    # They will be used in future implementations for filtered feeds
+
     # Get number of videos requested (default: 10)
     limit = int(req.args.get('limit', 10))
     
     # TODO: Future recommendation parameters
-    # class_id = req.args.get('class_id')  # Will be used to fetch relevant class videos
-    # user_id = req.args.get('user_id')    # Will be used to fetch personalized recommendations
     # region = req.headers.get('CF-IPCountry')  # CloudFlare header for user region
     # device_type = req.headers.get('User-Agent')  # For device-specific optimizations
     
@@ -192,15 +239,8 @@ def get_videos(req: https_fn.Request) -> https_fn.Response:
     # TODO: In production, cache the results
     # redis_client.setex(cache_key, 300, json.dumps({'videos': videos}))  # Cache for 5 minutes
     
-    # Set CORS headers
-    headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET',
-        'Access-Control-Allow-Headers': 'Content-Type',
-    }
-    
     return https_fn.Response(
         json.dumps({'videos': videos}),
-        headers=headers,
+        headers=cors_headers,
         content_type='application/json'
     )

@@ -24,6 +24,35 @@ This document provides an overview of the video queuing system implemented for o
 - **Error Handling & Future Extensions:**
   - Currently, the function handles missing data using defaults. In future versions, caching mechanisms, engagement-based sorting, and recommendation integration may be added.
 
+### Request Parameters
+- **Authentication:** Requires a valid Firebase authentication token in the Authorization header
+- **Required Parameters:** None
+- **Optional Parameters:**
+  - `limit`: Number of videos to return (default: 10)
+  - `user_id`: User ID for future personalized feed implementation
+  - `class_id`: Class ID for future class-specific feed implementation
+  - Note: Currently, user_id and class_id do not affect the video selection algorithm
+
+### Python Request Example
+```python
+import requests
+
+headers = {
+    'Authorization': 'Bearer YOUR_FIREBASE_TOKEN'
+}
+
+params = {
+    'limit': 10,
+    'user_id': 'user123',  # Optional, for future use
+    'class_id': 'class456' # Optional, for future use
+}
+
+response = requests.get('YOUR_FIREBASE_FUNCTION_URL/get_videos', 
+                       headers=headers,
+                       params=params)
+videos = response.json()['videos']
+```
+
 ### Example Call
 ```bash
 GET https://us-central1-<project-id>.cloudfunctions.net/get_videos?limit=5
