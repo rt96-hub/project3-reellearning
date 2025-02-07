@@ -10,6 +10,10 @@ learning app
 - no phone rotate
 
 
+- phone validation:
+    - weird overlap message on pill 
+    - when you go past the first 5 videos in the feed, and switch to anoter class feed, get RangeError (length): Invalid value: Not in inclusive range 0..4 x
+
 x login/signup page has a background of equations and other educational text floating across the background
 x validate email is correct format
 x login signup page titles

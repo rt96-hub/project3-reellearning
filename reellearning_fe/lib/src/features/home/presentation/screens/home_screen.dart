@@ -10,9 +10,6 @@ import '../widgets/video_action_buttons.dart';
 import '../widgets/video_understanding_buttons.dart';
 import '../widgets/feed_selection_pill.dart';
 
-// Add this provider at the top of the file with other providers
-final currentVideoIndexProvider = StateProvider<int>((ref) => 0);
-
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -38,6 +35,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ref.read(selectedFeedProvider.notifier).state = 'personal';
         ref.read(paginatedVideoProvider.notifier).refresh();
       }
+
+      // Listen for feed changes
+      ref.listen(currentChannelIdProvider, (previous, next) {
+        print('[HomeScreen] Feed changed from $previous to $next');
+        // Reset page controller when feed changes
+        _pageController.jumpToPage(0);
+      });
     });
   }
 
@@ -49,19 +53,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _handlePageChange() {
-    if (_pageController.position.pixels ==
-        _pageController.position.maxScrollExtent) {
+    if (_pageController.position.pixels == _pageController.position.maxScrollExtent) {
       return;
     }
 
     final newIndex = _pageController.page?.round() ?? 0;
-    // Update the current video index in the provider
-    ref.read(currentVideoIndexProvider.notifier).state = newIndex;
-
-    // Check if we need to load more videos
     final videos = ref.read(paginatedVideoProvider);
-    if (videos.length - newIndex <= 2) {
-      ref.read(paginatedVideoProvider.notifier).loadMore();
+    
+    // Ensure the new index is within bounds
+    if (newIndex >= 0 && newIndex < videos.length) {
+      print('[HomeScreen] Updating video index to: $newIndex (total videos: ${videos.length})');
+      // Update the current video index in the provider
+      ref.read(currentVideoIndexProvider.notifier).state = newIndex;
+
+      // Check if we need to load more videos
+      if (videos.length - newIndex <= 2) {
+        print('[HomeScreen] Near end of feed, loading more videos');
+        ref.read(paginatedVideoProvider.notifier).loadMore();
+      }
+    } else {
+      print('[HomeScreen] Invalid index $newIndex for video list of size ${videos.length}');
     }
   }
 

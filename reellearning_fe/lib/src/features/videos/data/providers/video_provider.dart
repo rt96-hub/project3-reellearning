@@ -103,10 +103,14 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
   static const String _functionUrl = 'https://us-central1-reellearning-prj3.cloudfunctions.net/get_videos';
 
   Future<void> _fetchNextBatch() async {
-    if (_isLoading) return;
+    if (_isLoading) {
+      print('[PaginatedVideoNotifier] Already loading, skipping fetch');
+      return;
+    }
     
     try {
       _isLoading = true;
+      print('[PaginatedVideoNotifier] Starting to fetch next batch');
       
       // Get the current user's ID token
       final user = FirebaseAuth.instance.currentUser;
@@ -117,12 +121,14 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
       
       // Get current channel ID
       final channelId = ref.read(currentChannelIdProvider);
+      print('[PaginatedVideoNotifier] Fetching for channel: ${channelId ?? "personal feed"}');
       
       // Build URL with channel ID if present
       var url = Uri.parse('$_functionUrl?limit=$_batchSize');
       if (channelId != null) {
         url = Uri.parse('$_functionUrl?limit=$_batchSize&channel_id=$channelId');
       }
+      print('[PaginatedVideoNotifier] Requesting URL: $url');
       
       // Make request to our cloud function
       final response = await http.get(
@@ -180,13 +186,16 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
         
         // Wait for all video URL conversions to complete
         final resolvedVideos = await Future.wait(videos);
+        print('[PaginatedVideoNotifier] Fetched ${resolvedVideos.length} new videos');
         
         if (state.length >= _maxQueueSize) {
-          // Remove oldest batch of videos when adding new ones
+          print('[PaginatedVideoNotifier] Queue full (${state.length} videos), removing oldest batch');
           state = [...state.sublist(_batchSize), ...resolvedVideos];
         } else {
+          print('[PaginatedVideoNotifier] Adding videos to queue (current size: ${state.length})');
           state = [...state, ...resolvedVideos];
         }
+        print('[PaginatedVideoNotifier] New queue size: ${state.length}');
       } else {
         print('Error fetching videos: ${response.statusCode}');
       }
@@ -199,16 +208,30 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
 
   // Helper method to get current video index
   int _getCurrentVideoIndex() {
-    return ref.read(currentVideoIndexProvider);
+    final index = ref.read(currentVideoIndexProvider);
+    print('[PaginatedVideoNotifier] Current video index: $index');
+    return index;
   }
 
   Future<void> loadMore() async {
+    print('[PaginatedVideoNotifier] Loading more videos');
     await _fetchNextBatch();
   }
   
   Future<void> refresh() async {
+    print('[PaginatedVideoNotifier] Starting refresh');
+    print('[PaginatedVideoNotifier] Current state size: ${state.length}');
     state = [];
+    print('[PaginatedVideoNotifier] Cleared state, new size: ${state.length}');
+    
+    // Reset current video index when switching feeds
+    final oldIndex = ref.read(currentVideoIndexProvider);
+    ref.read(currentVideoIndexProvider.notifier).state = 0;
+    print('[PaginatedVideoNotifier] Reset video index from $oldIndex to 0');
+    
+    print('[PaginatedVideoNotifier] Fetching new batch after refresh');
     await _fetchNextBatch();
+    print('[PaginatedVideoNotifier] Refresh complete, new state size: ${state.length}');
   }
 }
 
