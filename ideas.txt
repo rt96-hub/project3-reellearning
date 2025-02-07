@@ -219,17 +219,17 @@ x maybe include a search page
         - still need the video grid page with custom feed
 
     - video grid pages:
-        - posted videos (from profiles)
+        x posted videos (from profiles)
         - bookmarked videos (from own profile and classes)
             - need to add bookmarked vids button on classes
             - will comment out the class bookmark button for now
-        - liked videos (from personal profile)
-        - page layout
-        - get videos
-        - select video to make the special feed
-        - need a modified video provider that just has "ALL" the videos, or another function that fetches paginated lists of videos in order
+        x liked videos (from personal profile)
+        x page layout
+        x get videos
+        x select video to make the special feed
+        x need a modified video provider that just has "ALL" the videos, or another function that fetches paginated lists of videos in order
 
-    - description and title disappeared (on web at least)
+    x description and title disappeared (on web at least)
     - feedback when clicking the understanding buttons
     - videos PAUSE when you go to a different page
     - random back navigation stuff
