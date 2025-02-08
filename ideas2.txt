@@ -1,0 +1,29 @@
+- track watched videos
+- preload videos/stream
+    - store download of prior x videos so you can go back??
+- refactor?
+- generate fake video data
+    - name, description
+    - tags
+    - fake transcript
+    - ai gen analysis of transcript and otherwise
+- tag videos with subject
+    - tag classes/feeds with interests and understanding
+    - BASIC recommendation system from get videos
+- tag classes with subject too?
+
+
+- ai
+    - ai generated onboarding??? (GOTTA BE FAST THO)
+    - ai generated progress report(what have you done over the last x days)
+    - ai generated class report for curators (what have the students been liking/comprehending)
+    - ai generated questions randomly in the feed, based on last x videos watched (depends on subject)
+    - ai generated badges or achievements???
+        - badges/achievements page (NFT???)
+    
+
+
+- eventually
+    - search
+    - dms
+    - notifications

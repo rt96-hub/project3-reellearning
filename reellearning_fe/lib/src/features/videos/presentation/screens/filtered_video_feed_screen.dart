@@ -7,20 +7,24 @@ import '../../../home/presentation/widgets/video_understanding_buttons.dart';
 import '../widgets/video_player_widget.dart';
 import '../../data/models/video_model.dart';
 import '../../data/providers/video_controller_provider.dart';
+import '../../../auth/data/providers/auth_provider.dart';
 import '../../../../core/navigation/route_observer.dart';
 
 final currentFilteredVideoIndexProvider = StateProvider<int>((ref) => 0);
+final currentClassIdProvider = StateProvider<String?>((ref) => null);
 
 class FilteredVideoFeedScreen extends ConsumerStatefulWidget {
   final List<VideoModel> videos;
   final int initialIndex;
   final String title;
+  final String? classId;
 
   const FilteredVideoFeedScreen({
     Key? key,
     required this.videos,
     required this.initialIndex,
     required this.title,
+    this.classId,
   }) : super(key: key);
 
   @override
@@ -37,10 +41,13 @@ class _FilteredVideoFeedScreenState extends ConsumerState<FilteredVideoFeedScree
     _pageController = PageController(initialPage: widget.initialIndex);
     _pageController.addListener(_handlePageChange);
     
-    // Set initial index in post-frame callback
+    // Set initial index and class ID in post-frame callback
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         ref.read(currentFilteredVideoIndexProvider.notifier).state = widget.initialIndex;
+        if (widget.classId != null) {
+          ref.read(currentClassIdProvider.notifier).state = widget.classId;
+        }
       }
     });
   }
@@ -85,6 +92,12 @@ class _FilteredVideoFeedScreenState extends ConsumerState<FilteredVideoFeedScree
   Widget build(BuildContext context) {
     final currentIndex = ref.watch(currentFilteredVideoIndexProvider);
     final currentVideo = widget.videos[currentIndex];
+    final userProfile = ref.watch(currentUserProvider);
+    final currentClassId = ref.watch(currentClassIdProvider);
+
+    if (userProfile == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -129,6 +142,8 @@ class _FilteredVideoFeedScreenState extends ConsumerState<FilteredVideoFeedScree
                   autoPlay: index == currentIndex,
                   isMuted: _isMuted,
                   onMuteChanged: (muted) => setState(() => _isMuted = muted),
+                  userId: userProfile.uid,  // Change from id to uid
+                  classId: currentClassId,  // Pass class ID if available
                 );
               },
             ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/models/video_model.dart';
 import '../../data/providers/video_controller_provider.dart';
 
@@ -10,6 +11,8 @@ class VideoPlayerWidget extends ConsumerStatefulWidget {
   final bool looping;
   final bool isMuted;
   final ValueChanged<bool> onMuteChanged;
+  final String userId;
+  final String? classId;
 
   const VideoPlayerWidget({
     Key? key,
@@ -18,6 +21,8 @@ class VideoPlayerWidget extends ConsumerStatefulWidget {
     this.looping = true,
     required this.isMuted,
     required this.onMuteChanged,
+    required this.userId,
+    this.classId,
   }) : super(key: key);
 
   @override
@@ -30,24 +35,98 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
   bool _showPlayPauseOverlay = false;
   bool _showSeekOverlay = false;
   String _seekDirection = '';
+  bool _hasRecordedView = false;  // Track if view has been recorded
+  bool _isActivelyPlaying = false;  // Track if video is actively playing
 
   @override
   void initState() {
     super.initState();
+    debugPrint('Initializing VideoPlayerWidget for video: ${widget.video.id}');
     _initializeController();
   }
 
+  Future<void> _recordView() async {
+    if (_hasRecordedView) {
+      debugPrint('View already recorded for this session, skipping...');
+      return;
+    }
+    
+    // Set flag immediately to prevent concurrent calls
+    _hasRecordedView = true;
+    debugPrint('Recording view for video: ${widget.video.id}');
+    
+    try {
+      final videoRef = FirebaseFirestore.instance.collection('videos').doc(widget.video.id);
+      final userViewsRef = FirebaseFirestore.instance.collection('userViews');
+      final userRef = FirebaseFirestore.instance.collection('users').doc(widget.userId);
+      
+      // Create view record with auto-generated ID
+      final docRef = await userViewsRef.add({
+        'userId': userRef,  // Reference to users collection
+        'videoId': videoRef,  // Reference to videos collection
+        'classId': widget.classId != null ? [
+          FirebaseFirestore.instance.collection('classes').doc(widget.classId)
+        ] : [],
+        'watchedAt': FieldValue.serverTimestamp(),
+      });
+
+      debugPrint('Created view record with ID: ${docRef.id}');
+
+      // Increment video views
+      await videoRef.update({
+        'engagement.views': FieldValue.increment(1),
+      });
+
+      debugPrint('Updated video view count');
+    } catch (e) {
+      debugPrint('Error recording view: $e');
+      // Reset flag if recording failed
+      _hasRecordedView = false;
+    }
+  }
+
+  void _checkProgress() {
+    if (_controller == null || !_controller!.value.isInitialized) return;
+    
+    // Only check progress if video is actively playing
+    if (!_controller!.value.isPlaying) {
+      _isActivelyPlaying = false;
+      return;
+    }
+
+    // Update active playing state
+    if (!_isActivelyPlaying) {
+      _isActivelyPlaying = true;
+      debugPrint('Video started playing: ${widget.video.id}');
+    }
+    
+    final duration = _controller!.value.duration;
+    final position = _controller!.value.position;
+    final progress = position.inMilliseconds / duration.inMilliseconds;
+    
+    // Record view when 90% of video is watched and it's actively playing
+    if (progress >= 0.9 && !_hasRecordedView && _isActivelyPlaying) {
+      debugPrint('Video reached 90% completion. Progress: ${(progress * 100).toStringAsFixed(1)}%');
+      debugPrint('Position: ${position.inSeconds}s / Duration: ${duration.inSeconds}s');
+      _recordView();
+    }
+  }
+
   Future<void> _initializeController() async {
-    debugPrint('Initializing video with URL: ${widget.video.videoUrl}');
+    debugPrint('Initializing video controller with URL: ${widget.video.videoUrl}');
     
     try {
       final videoUrl = await widget.video.getDownloadUrl();
-      if (!mounted) return;
+      if (!mounted) {
+        debugPrint('Widget unmounted during initialization');
+        return;
+      }
 
       final controller = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
       await controller.initialize();
       
       if (!mounted) {
+        debugPrint('Widget unmounted after controller initialization');
         controller.dispose();
         return;
       }
@@ -67,22 +146,18 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
       controller.setLooping(widget.looping);
       controller.setVolume(widget.isMuted ? 0 : 1);
       
+      // Add listener for video progress
+      controller.addListener(_checkProgress);
+      debugPrint('Video controller initialized successfully');
+      
     } catch (e) {
       debugPrint('Error initializing video controller: $e');
     }
   }
 
-  @override
-  void didUpdateWidget(VideoPlayerWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.isMuted != widget.isMuted) {
-      _controller?.setVolume(widget.isMuted ? 0 : 1);
-    }
-  }
-
   void _togglePlayPause() {
     if (_controller == null) return;
-    
+
     setState(() {
       if (_controller!.value.isPlaying) {
         _controller!.pause();
@@ -92,7 +167,6 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
       _showPlayPauseOverlay = true;
     });
 
-    // Hide the overlay after a short delay
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         setState(() {
@@ -114,7 +188,6 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
     final tapPosition = details.globalPosition.dx;
     final seekDuration = const Duration(seconds: 5);
 
-    // Left 1/3 of the screen
     if (tapPosition < screenWidth / 3) {
       final newPosition = _controller!.value.position - seekDuration;
       _controller!.seekTo(newPosition);
@@ -122,9 +195,7 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
         _showSeekOverlay = true;
         _seekDirection = 'backward';
       });
-    }
-    // Right 1/3 of the screen
-    else if (tapPosition > (screenWidth * 2 / 3)) {
+    } else if (tapPosition > (screenWidth * 2 / 3)) {
       final newPosition = _controller!.value.position + seekDuration;
       _controller!.seekTo(newPosition);
       setState(() {
@@ -133,7 +204,6 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
       });
     }
 
-    // Hide the overlay after a short delay
     Future.delayed(const Duration(milliseconds: 1000), () {
       if (mounted) {
         setState(() {
@@ -145,22 +215,40 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
 
   @override
   void dispose() {
-    _controller?.dispose();
+    debugPrint('Disposing VideoPlayerWidget for video: ${widget.video.id}');
+    if (_controller != null) {
+      _controller!.removeListener(_checkProgress);
+      _controller!.dispose();
+    }
     super.dispose();
   }
 
-  // Calculate the optimal scale factor to fill either width or height
+  @override
+  void didUpdateWidget(VideoPlayerWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    debugPrint('Widget updated. Old video: ${oldWidget.video.id}, New video: ${widget.video.id}');
+    
+    // Reset tracking state when video changes
+    if (oldWidget.video.id != widget.video.id) {
+      _hasRecordedView = false;
+      _isActivelyPlaying = false;
+      debugPrint('Reset view tracking state for new video: ${widget.video.id}');
+    }
+    
+    if (oldWidget.isMuted != widget.isMuted) {
+      _controller?.setVolume(widget.isMuted ? 0 : 1);
+    }
+  }
+
   double _calculateOptimalScale(BuildContext context) {
     if (_controller == null) return 1.0;
-    
+
     final screenSize = MediaQuery.of(context).size;
     final videoSize = _controller!.value.size;
-    
-    // Calculate how much we need to scale to match width and height
+
     final scaleWidth = screenSize.width / (videoSize.width * _controller!.value.aspectRatio);
     final scaleHeight = screenSize.height / (videoSize.height / _controller!.value.aspectRatio);
-    
-    // Use the smaller scale to ensure video fits within screen bounds
+
     return scaleWidth > scaleHeight ? scaleWidth : scaleHeight;
   }
 
@@ -175,7 +263,6 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
       onDoubleTapDown: (details) => _handleDoubleTapDown(details, context),
       child: Stack(
         children: [
-          // Video Container that fills the screen
           Container(
             width: MediaQuery.of(context).size.width,
             height: MediaQuery.of(context).size.height,
@@ -196,7 +283,6 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
             ),
           ),
 
-          // Progress Bar (Always Visible)
           Positioned(
             left: 0,
             right: 0,
@@ -205,11 +291,9 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
               height: 3,
               child: Stack(
                 children: [
-                  // Background track
                   Container(
                     color: Colors.white.withOpacity(0.3),
                   ),
-                  // Progress indicator
                   ValueListenableBuilder(
                     valueListenable: _controller!,
                     builder: (context, VideoPlayerValue value, child) {
@@ -229,7 +313,6 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
             ),
           ),
 
-          // Seek Overlay
           if (_showSeekOverlay)
             Positioned(
               left: _seekDirection == 'backward' ? 32 : null,
@@ -249,7 +332,6 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
               ),
             ),
 
-          // Play/Pause Overlay
           if (_showPlayPauseOverlay)
             Center(
               child: Container(
@@ -266,7 +348,6 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
               ),
             ),
 
-          // Mute/Unmute Button
           Positioned(
             top: 48,
             right: 16,

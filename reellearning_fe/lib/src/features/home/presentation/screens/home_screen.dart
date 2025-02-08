@@ -134,8 +134,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     });
 
     final videos = ref.watch(paginatedVideoProvider);
-    final userProfile = ref.watch(currentUserProvider);
     final currentIndex = ref.watch(currentVideoIndexProvider);
+    final userProfile = ref.watch(currentUserProvider);
+    
+    if (videos.isEmpty || currentIndex >= videos.length || userProfile == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    final currentVideo = videos[currentIndex];
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -153,6 +159,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   autoPlay: index == currentIndex,
                   isMuted: _isMuted,
                   onMuteChanged: (muted) => setState(() => _isMuted = muted),
+                  userId: userProfile.uid,
                 );
               },
             ),

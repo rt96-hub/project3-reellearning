@@ -72,17 +72,16 @@ bottom bar should be:
         x comments:
             x comments open up a bottom half modal, highly liked comments go to the topic
             x comments can be liked 
-            - comments can be bookmarked
-            - comments can be replied to
-        - likes:
-            - when liked, brings up a modal of all the classes you have made
-            - you can select any number of classes (or none for a general like) to like the video for
-            - show liked videos on profile? so we can remove them if a user wants to
+            x comments can be replied to
+        x likes:
+            x when liked, brings up a modal of all the classes you have made
+            x you can select any number of classes (or none for a general like) to like the video for
+            x show liked videos on profile? so we can remove them if a user wants to
             - will train the algorithm to show more in those classes
-        - bookmarked:
-            - saves for later in user profile
-            - save in a particular class or general? similar to likes
-            - stores in a separate collection with the joint, or is it a sub collection of videoIds in like users.bookmarks....
+        x bookmarked:
+            x saves for later in user profile
+            x save in a particular class or general? similar to likes
+            x stores in a separate collection with the joint, or is it a sub collection of videoIds in like users.bookmarks....
         - share:
             - either other users or classes(?)
             - copy link
@@ -92,10 +91,10 @@ bottom bar should be:
         x don't understand
         x partially understand
         x fully understand
-        - make the understanding schema to allow these to be tracked
+        x make the understanding schema to allow these to be tracked
     x slide the screen down to see more videos
         x repeat
-        - when you leave the feed, the autoplay should stop, maybe just get paused (right now I hear the audio still playing)
+        x when you leave the feed, the autoplay should stop, maybe just get paused (right now I hear the audio still playing)
         x forever (do infinite/random stuff)
         x some kind of find next video(s) function in firebase???
 
@@ -128,6 +127,8 @@ bottom bar should be:
     - description
     - tags
     - thumbnail
+    - transcript
+    - analysis of transcript, video file, etc
     - (tags for now, eventually generate topics and subtopics, and level of difficulty)
     - (or the above tags are suggested when you upload a video and the AI scans it)
     
@@ -142,11 +143,11 @@ x profile
         - from messages
     x name, pfp, description, etc
     x posted videos button
-        - grid like view
+        x grid like view
     x liked videos button (if you are the user)
-        - grid like view
+        x grid like view
     x bookmarked videos button (if you are the user)
-        - grid like view
+        x grid like view
     x classes (if you are not the user) 
         x row view similar to the class list
     x connect/block buttons (if you are not the user)
@@ -160,30 +161,29 @@ x maybe include a search page
     - for users
     - for videos
 
-- different video feed types
-    - main feed
-    - class specific feed
-    - own user bookmarked videos
-    - own user liked videos
-    - user created videos (from any users profile/video page)
-    - class bookmarked videos
+x different video feed types
+    x main feed
+    x class specific feed
+    x own user bookmarked videos
+    x own user liked videos
+    x user created videos (from any users profile/video page)
+    x class bookmarked videos
 
 
-- video features:
-    - make sure video doesnt play in the background
+x video features:
+    x make sure video doesnt play in the background
     x play/pause videos with tap
     x mute/unmute with icon at top left or right???
         x save mute status between vids
     x double tap on the left or right quarter to skip back/forward x seconds
-        - maybe double tap and hold to scrub??? (NAH MAYBE LATER)
     x video progress bar
-    - mark understanding
+    x mark understanding
 
 
 - weird back navigation issues:
     - after opening profile from comments, back button works correct, then go to class detail and that profile, back button brings you to the comments
     - back arrow in the top left of the profile page brings you to the feed (we need to make it bring you back to the previous page, like the comment, or class list, etc)
-- going back to the home screen doesnt reset the feed (might already be done)
+x going back to the home screen doesnt reset the feed (might already be done)
 - dont make a video load a second time when you go back up the feed, maybe clear the cache after like 10 videos or something
 - partial load later videos, so they can start without a delay, and load while you watch
 
@@ -194,6 +194,7 @@ x maybe include a search page
 
 
 - ai enhancements:
+    - quick ai generated onboarding???
     - ai can generate report cards for a user, based on their activity over a period of time
     - for a curator of a class, the ai can aggregate the activity of users in the class to help guide the curation of the class
     - ai can generate questions and answers for a particular subject, appears randomly in the feed
@@ -232,7 +233,7 @@ x maybe include a search page
     x description and title disappeared (on web at least)
     x feedback when clicking the understanding buttons
     x videos PAUSE when you go to a different page
-    - stops scrolling when you get to video 50 (when it drops the 5 bottom videos, does it move the index down by 5?)
+    x stops scrolling when you get to video 50 (when it drops the 5 bottom videos, does it move the index down by 5?)
     - random back navigation stuff
     - thumbnail for videos
         - temp solution is to just have a default symbol when the thumbnail field is blank or cant be found

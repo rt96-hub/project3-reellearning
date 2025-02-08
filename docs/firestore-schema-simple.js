@@ -279,4 +279,13 @@ videoComprehension: {
   }
 }
 
-
+// user views collection
+// a new record is generated anytime a user watches a video (even if they have watched it before)
+userViews: {
+  userViewId: {
+    userId: Reference,
+    videoId: Reference,
+    classId: Reference,  // Optional, if watched within a class
+    watchedAt: Timestamp
+  }
+}

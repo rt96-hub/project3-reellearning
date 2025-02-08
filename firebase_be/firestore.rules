@@ -136,6 +136,16 @@ service cloud.firestore {
                           bookmarkId.split('_')[0] == request.auth.uid;
     }
 
+    // User Views collection rules
+    match /userViews/{userViewId} {
+      // Only allow creating view records if:
+      // 1. User is authenticated
+      allow create: if isAuthenticated()
+
+      // No updates or deletes allowed on view records
+      allow update, delete: if false;
+    }
+
     // Video Comprehension collection rules
     match /videoComprehension/{docId} {
       allow read: if isAuthenticated();
