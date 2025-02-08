@@ -98,7 +98,11 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
   bool _isLoading = false;
   final int _batchSize = 5;
   static const int _maxQueueSize = 50;  // Maximum number of videos to keep in queue
+  bool _isAdjustingIndex = false;  // Flag to prevent index update loops
   
+  // Public getter for index adjustment state
+  bool get isAdjustingIndex => _isAdjustingIndex;
+
   // TODO: Move this to a configuration file
   static const String _functionUrl = 'https://us-central1-reellearning-prj3.cloudfunctions.net/get_videos';
 
@@ -190,7 +194,31 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
         
         if (state.length >= _maxQueueSize) {
           print('[PaginatedVideoNotifier] Queue full (${state.length} videos), removing oldest batch');
+          
+          // Get current index before modifying state
+          final currentIndex = ref.read(currentVideoIndexProvider);
+          
+          // Calculate new index after removing batch
+          final newIndex = currentIndex >= _batchSize ? currentIndex - _batchSize : 0;
+          print('[PaginatedVideoNotifier] Adjusting index from $currentIndex to $newIndex');
+          
+          // Update state first
           state = [...state.sublist(_batchSize), ...resolvedVideos];
+          
+          // Set flag to prevent index updates from page controller
+          _isAdjustingIndex = true;
+          
+          // Then update the index to ensure it's valid for the new state
+          if (newIndex < state.length) {
+            ref.read(currentVideoIndexProvider.notifier).state = newIndex;
+            // Notify that page controller needs to update
+            ref.read(forcePageJumpProvider.notifier).state = newIndex;
+          }
+          
+          // Reset flag after a short delay to allow page controller to update
+          Future.delayed(const Duration(milliseconds: 100), () {
+            _isAdjustingIndex = false;
+          });
         } else {
           print('[PaginatedVideoNotifier] Adding videos to queue (current size: ${state.length})');
           state = [...state, ...resolvedVideos];
@@ -234,6 +262,9 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
     print('[PaginatedVideoNotifier] Refresh complete, new state size: ${state.length}');
   }
 }
+
+// Provider to force page jumps
+final forcePageJumpProvider = StateProvider<int?>((ref) => null);
 
 final paginatedVideoProvider = StateNotifierProvider<PaginatedVideoNotifier, List<VideoModel>>(
   (ref) => PaginatedVideoNotifier(ref),

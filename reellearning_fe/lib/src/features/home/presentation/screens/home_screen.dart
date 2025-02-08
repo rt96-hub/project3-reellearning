@@ -78,11 +78,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     final newIndex = _pageController.page?.round() ?? 0;
     final videos = ref.read(paginatedVideoProvider);
     
-    // Ensure the new index is within bounds
-    if (newIndex >= 0 && newIndex < videos.length) {
+    // Ensure the new index is within bounds and the videos list is not empty
+    if (videos.isNotEmpty && newIndex >= 0 && newIndex < videos.length) {
       print('[HomeScreen] Updating video index to: $newIndex (total videos: ${videos.length})');
-      // Update the current video index in the provider
-      ref.read(currentVideoIndexProvider.notifier).state = newIndex;
+      
+      // Only update if we're not in the middle of an index adjustment
+      final notifier = ref.read(paginatedVideoProvider.notifier) as PaginatedVideoNotifier;
+      if (!notifier.isAdjustingIndex) {
+        // Update the current video index in the provider
+        ref.read(currentVideoIndexProvider.notifier).state = newIndex;
+      }
 
       // Check if we need to load more videos
       if (videos.length - newIndex <= 2) {
@@ -91,6 +96,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       }
     } else {
       print('[HomeScreen] Invalid index $newIndex for video list of size ${videos.length}');
+      // If the index is invalid, try to recover by jumping to the last valid index
+      if (videos.isNotEmpty) {
+        final lastValidIndex = videos.length - 1;
+        print('[HomeScreen] Recovering by jumping to index $lastValidIndex');
+        _pageController.jumpToPage(lastValidIndex);
+        ref.read(currentVideoIndexProvider.notifier).state = lastValidIndex;
+      }
     }
   }
 
@@ -109,6 +121,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       print('[HomeScreen] Feed changed from $previous to $next');
       // Reset page controller when feed changes
       _pageController.jumpToPage(0);
+    });
+
+    // Listen to forced page jumps
+    ref.listen(forcePageJumpProvider, (previous, next) {
+      if (next != null && _pageController.hasClients) {
+        print('[HomeScreen] Forced jump to page $next');
+        _pageController.jumpToPage(next);
+        // Reset the force jump provider
+        ref.read(forcePageJumpProvider.notifier).state = null;
+      }
     });
 
     final videos = ref.watch(paginatedVideoProvider);
