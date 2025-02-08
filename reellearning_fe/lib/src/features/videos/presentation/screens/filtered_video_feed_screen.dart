@@ -152,7 +152,7 @@ class _FilteredVideoFeedScreenState extends ConsumerState<FilteredVideoFeedScree
           if (widget.videos.isNotEmpty)
             Positioned(
               left: 16,
-              right: 48, // Leave space for action buttons
+              right: 88, // Increased space for action buttons
               bottom: 120,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,9 +253,12 @@ class _FilteredVideoFeedScreenState extends ConsumerState<FilteredVideoFeedScree
           if (widget.videos.isNotEmpty)
             Positioned(
               right: 8,
-              bottom: MediaQuery.of(context).size.height * 0.3,
-              child: VideoActionButtons(
-                videoId: currentVideo.id,
+              bottom: 80,
+              child: SizedBox(  // Added SizedBox to constrain width
+                width: 72,     // Specific width for action buttons column
+                child: VideoActionButtons(
+                  videoId: currentVideo.id,
+                ),
               ),
             ),
 

@@ -178,8 +178,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
             Positioned(
               right: 8,
               bottom: 80,
-              child: VideoActionButtons(
-                videoId: videos[currentIndex].id,
+              child: SizedBox(  // Added SizedBox to constrain width
+                width: 72,     // Specific width for action buttons column
+                child: VideoActionButtons(
+                  videoId: videos[currentIndex].id,
+                ),
               ),
             ),
 
@@ -187,7 +190,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
           if (videos.isNotEmpty)
             Positioned(
               left: 16,
-              right: 48, // Leave space for action buttons
+              right: 88, // Increased space for action buttons
               bottom: 120,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,14 +203,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                       StreamBuilder<DocumentSnapshot>(
                         stream: (videos[currentIndex].creator as DocumentReference).snapshots(),
                         builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
-                          if (!snapshot.hasData) {
+                          if (!snapshot.hasData || !snapshot.data!.exists) {
                             return const CircleAvatar(
                               radius: 20,
                               child: Icon(Icons.person),
                             );
                           }
 
-                          final userData = snapshot.data!.data() as Map<String, dynamic>;
+                          final userData = snapshot.data!.data() as Map<String, dynamic>?;
+                          if (userData == null) {
+                            return const CircleAvatar(
+                              radius: 20,
+                              child: Icon(Icons.person),
+                            );
+                          }
+
                           final profile = userData['profile'] as Map<String, dynamic>? ?? {};
                           final creatorId = snapshot.data!.id;
 
@@ -244,11 +254,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                             StreamBuilder<DocumentSnapshot>(
                               stream: (videos[currentIndex].creator as DocumentReference).snapshots(),
                               builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
-                                if (!snapshot.hasData) {
-                                  return const SizedBox.shrink();
+                                if (!snapshot.hasData || !snapshot.data!.exists) {
+                                  return const Text(
+                                    'Unknown User',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 14,
+                                    ),
+                                  );
                                 }
 
-                                final userData = snapshot.data!.data() as Map<String, dynamic>;
+                                final userData = snapshot.data!.data() as Map<String, dynamic>?;
+                                if (userData == null) {
+                                  return const Text(
+                                    'Unknown User',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 14,
+                                    ),
+                                  );
+                                }
+
                                 final profile = userData['profile'] as Map<String, dynamic>? ?? {};
                                 final creatorId = snapshot.data!.id;
 

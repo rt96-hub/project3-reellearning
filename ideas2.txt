@@ -10,13 +10,13 @@ x generate fake video data
 - tag videos with subject
     - tag classes/feeds with interests and understanding
     - BASIC recommendation system from get videos
-- generate video files
-    - 10 seconds of video (same dimensions as my phone videos)
-    - lower quality
-    - just the title and description
+x generate video files
+    x 10 seconds of video (same dimensions as my phone videos)
+    x lower quality
+    x just the title and description
     - make a thumbnail
 - tag classes with subject too?
-
+- build and deploy
 
 - ai
     - ai generated onboarding??? (GOTTA BE FAST THO)

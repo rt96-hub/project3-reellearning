@@ -246,10 +246,19 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
     final screenSize = MediaQuery.of(context).size;
     final videoSize = _controller!.value.size;
 
-    final scaleWidth = screenSize.width / (videoSize.width * _controller!.value.aspectRatio);
-    final scaleHeight = screenSize.height / (videoSize.height / _controller!.value.aspectRatio);
+    // Calculate video aspect ratio
+    final videoAspectRatio = videoSize.width / videoSize.height;
+    // Calculate screen aspect ratio
+    final screenAspectRatio = screenSize.width / screenSize.height;
 
-    return scaleWidth > scaleHeight ? scaleWidth : scaleHeight;
+    // If video is wider than screen (relative to their heights)
+    if (videoAspectRatio > screenAspectRatio) {
+      // Scale based on height to fill screen vertically
+      return screenSize.height / videoSize.height;
+    } else {
+      // Scale based on width to fill screen horizontally
+      return screenSize.width / videoSize.width;
+    }
   }
 
   @override
@@ -267,18 +276,12 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
             width: MediaQuery.of(context).size.width,
             height: MediaQuery.of(context).size.height,
             color: Colors.black,
-            child: Transform.scale(
-              scale: _calculateOptimalScale(context),
-              child: AspectRatio(
-                aspectRatio: _controller!.value.aspectRatio,
-                child: FittedBox(
-                  fit: BoxFit.contain,
-                  child: SizedBox(
-                    width: _controller!.value.size.width,
-                    height: _controller!.value.size.height,
-                    child: VideoPlayer(_controller!),
-                  ),
-                ),
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: _controller!.value.size.width,
+                height: _controller!.value.size.height,
+                child: VideoPlayer(_controller!),
               ),
             ),
           ),
