@@ -6,6 +6,8 @@ import '../../../home/presentation/widgets/video_action_buttons.dart';
 import '../../../home/presentation/widgets/video_understanding_buttons.dart';
 import '../widgets/video_player_widget.dart';
 import '../../data/models/video_model.dart';
+import '../../data/providers/video_controller_provider.dart';
+import '../../../../core/navigation/route_observer.dart';
 
 final currentFilteredVideoIndexProvider = StateProvider<int>((ref) => 0);
 
@@ -25,7 +27,7 @@ class FilteredVideoFeedScreen extends ConsumerStatefulWidget {
   ConsumerState<FilteredVideoFeedScreen> createState() => _FilteredVideoFeedScreenState();
 }
 
-class _FilteredVideoFeedScreenState extends ConsumerState<FilteredVideoFeedScreen> {
+class _FilteredVideoFeedScreenState extends ConsumerState<FilteredVideoFeedScreen> with RouteAware {
   late final PageController _pageController;
   bool _isMuted = false;
 
@@ -44,10 +46,32 @@ class _FilteredVideoFeedScreenState extends ConsumerState<FilteredVideoFeedScree
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      AppRouteObservers.shellObserver.subscribe(this, route);
+    }
+  }
+
+  @override
   void dispose() {
+    AppRouteObservers.shellObserver.unsubscribe(this);
     _pageController.removeListener(_handlePageChange);
     _pageController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didPushNext() {
+    debugPrint('FilteredVideoFeedScreen - Leaving screen');
+    ref.read(videoControllerProvider.notifier).pauseAndRemember();
+  }
+
+  @override
+  void didPopNext() {
+    debugPrint('FilteredVideoFeedScreen - Returning to screen');
+    ref.read(videoControllerProvider.notifier).resumeIfNeeded();
   }
 
   void _handlePageChange() {

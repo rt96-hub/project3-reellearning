@@ -9,6 +9,9 @@ import 'package:reellearning_fe/src/features/videos/presentation/widgets/video_p
 import '../widgets/video_action_buttons.dart';
 import '../widgets/video_understanding_buttons.dart';
 import '../widgets/feed_selection_pill.dart';
+import '../../../videos/data/providers/video_controller_provider.dart';
+import '../../../../core/navigation/route_observer.dart';
+import '../../../../features/navigation/providers/tab_state_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -17,7 +20,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   final PageController _pageController = PageController();
   bool _showFullDescription = false;
   bool _isMuted = false;
@@ -39,10 +42,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      AppRouteObservers.rootObserver.subscribe(this, route);
+    }
+  }
+
+  @override
   void dispose() {
+    AppRouteObservers.rootObserver.unsubscribe(this);
     _pageController.removeListener(_handlePageChange);
     _pageController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didPushNext() {
+    debugPrint('HomeScreen - Leaving screen');
+    ref.read(videoControllerProvider.notifier).pauseAndRemember();
+  }
+
+  @override
+  void didPopNext() {
+    debugPrint('HomeScreen - Returning to screen');
+    ref.read(videoControllerProvider.notifier).resumeIfNeeded();
   }
 
   void _handlePageChange() {
@@ -71,6 +96,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Listen to tab changes
+    ref.listen(tabStateProvider, (previous, next) {
+      if (previous != null && next == 0) {
+        // We're returning to the home tab
+        ref.read(videoControllerProvider.notifier).resumeIfNeeded();
+      }
+    });
+
     // Listen for feed changes in build method
     ref.listen(currentChannelIdProvider, (previous, next) {
       print('[HomeScreen] Feed changed from $previous to $next');

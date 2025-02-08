@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/home/presentation/widgets/bottom_nav_bar.dart';
+import '../../features/navigation/providers/tab_state_provider.dart';
+import '../../features/videos/data/providers/video_controller_provider.dart';
 
-class ShellScaffold extends StatelessWidget {
+class ShellScaffold extends ConsumerWidget {
   final Widget child;
   final int selectedIndex;
 
@@ -13,7 +16,20 @@ class ShellScaffold extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Update tab state when the selected index changes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(tabStateProvider.notifier).setTab(selectedIndex);
+    });
+
+    // Listen to tab changes
+    ref.listen(tabStateProvider, (previous, next) {
+      if (previous != null && previous != next) {
+        // Pause video when changing tabs
+        ref.read(videoControllerProvider.notifier).pauseAndRemember();
+      }
+    });
+
     return Scaffold(
       body: child,
       bottomNavigationBar: BottomNavBar(
@@ -40,4 +56,4 @@ class ShellScaffold extends StatelessWidget {
       ),
     );
   }
-} 
+}

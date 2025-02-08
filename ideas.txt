@@ -230,8 +230,9 @@ x maybe include a search page
         x need a modified video provider that just has "ALL" the videos, or another function that fetches paginated lists of videos in order
 
     x description and title disappeared (on web at least)
-    - feedback when clicking the understanding buttons
-    - videos PAUSE when you go to a different page
+    x feedback when clicking the understanding buttons
+    x videos PAUSE when you go to a different page
+    - stops scrolling when you get to video 50 (when it drops the 5 bottom videos, does it move the index down by 5?)
     - random back navigation stuff
     - thumbnail for videos
         - temp solution is to just have a default symbol when the thumbnail field is blank or cant be found

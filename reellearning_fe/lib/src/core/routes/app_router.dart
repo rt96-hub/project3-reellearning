@@ -20,6 +20,7 @@ import '../../features/onboarding/presentation/screens/onboarding_profile_screen
 import '../../features/onboarding/presentation/screens/interests_screen.dart';
 import '../../features/videos/presentation/screens/video_grid_screen.dart';
 import '../widgets/shell_scaffold.dart';
+import '../navigation/route_observer.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -32,6 +33,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
+    observers: [AppRouteObservers.rootObserver],
     initialLocation: '/login',
     redirect: (context, state) {
       final isLoggedIn = authState.value != null;
@@ -99,6 +101,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Root shell route for main navigation
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
+        observers: [AppRouteObservers.shellObserver],
         builder: (context, state, child) {
           // Determine selected index based on the current path
           final location = state.uri.path;
@@ -120,12 +123,46 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const HomeScreen(),
             routes: [
               GoRoute(
+                path: 'messages',  // becomes /messages
+                builder: (context, state) => const MessagesScreen(),
+              ),
+              GoRoute(
                 path: 'search',  // becomes /search
                 builder: (context, state) => const SearchScreen(),
               ),
               GoRoute(
-                path: 'messages',  // becomes /messages
-                builder: (context, state) => const MessagesScreen(),
+                path: 'classes',  // becomes /classes
+                builder: (context, state) => const ClassesScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'new',
+                    builder: (context, state) => const CreateClassScreen(),
+                  ),
+                  GoRoute(
+                    path: ':classId',
+                    builder: (context, state) => ClassDetailScreen(
+                      classId: state.pathParameters['classId']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'members',
+                        builder: (context, state) => ClassMembersScreen(
+                          classId: state.pathParameters['classId']!,
+                          className: (state.extra as Map<String, dynamic>)['className'] as String,
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'bookmarked',
+                        builder: (context, state) => VideoGridScreen(
+                          title: '${(state.extra as Map<String, dynamic>)['className'] as String} Bookmarks',
+                          sourceType: 'class',
+                          sourceId: state.pathParameters['classId']!,
+                          videoType: 'bookmarks',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
               // Profile section with nested navigation
               ShellRoute(
@@ -206,47 +243,6 @@ final routerProvider = Provider<GoRouter>((ref) {
                         builder: (context, state) => Scaffold(
                           body: Center(child: Text('${state.pathParameters['userId']}\'s Bookmarked Videos - Coming Soon')),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              // Classes section with nested navigation
-              ShellRoute(
-                navigatorKey: _classesNavigatorKey,
-                builder: (context, state, child) => child,
-                routes: [
-                  GoRoute(
-                    path: 'classes',  // becomes /classes
-                    builder: (context, state) => const ClassesScreen(),
-                    routes: [
-                      GoRoute(
-                        path: 'new',
-                        builder: (context, state) => const CreateClassScreen(),
-                      ),
-                      GoRoute(
-                        path: ':classId',
-                        builder: (context, state) => ClassDetailScreen(
-                          classId: state.pathParameters['classId']!,
-                        ),
-                        routes: [
-                          GoRoute(
-                            path: 'members',
-                            builder: (context, state) => ClassMembersScreen(
-                              classId: state.pathParameters['classId']!,
-                              className: (state.extra as Map<String, dynamic>)['className'] as String,
-                            ),
-                          ),
-                          GoRoute(
-                            path: 'bookmarked',
-                            builder: (context, state) => VideoGridScreen(
-                              title: '${(state.extra as Map<String, dynamic>)['className'] as String} Bookmarks',
-                              sourceType: 'class',
-                              sourceId: state.pathParameters['classId']!,
-                              videoType: 'bookmarks',
-                            ),
-                          ),
-                        ],
                       ),
                     ],
                   ),

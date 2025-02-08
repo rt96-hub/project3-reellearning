@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
 import '../../data/models/video_model.dart';
+import '../../data/providers/video_controller_provider.dart';
 
-class VideoPlayerWidget extends StatefulWidget {
+class VideoPlayerWidget extends ConsumerStatefulWidget {
   final VideoModel video;
   final bool autoPlay;
   final bool looping;
@@ -19,10 +21,10 @@ class VideoPlayerWidget extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  State<VideoPlayerWidget> createState() => _VideoPlayerWidgetState();
+  ConsumerState<VideoPlayerWidget> createState() => _VideoPlayerWidgetState();
 }
 
-class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
+class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
   VideoPlayerController? _controller;
   bool _isInitialized = false;
   bool _showPlayPauseOverlay = false;
@@ -55,32 +57,18 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
         _isInitialized = true;
       });
 
-      debugPrint('Video initialized successfully');
-      debugPrint('Video size: ${controller.value.size}');
-      debugPrint('Video duration: ${controller.value.duration}');
-      
-      // Set initial volume based on isMuted prop
-      controller.setVolume(widget.isMuted ? 0 : 1);
-      
+      // Register the controller with the provider
+      ref.read(videoControllerProvider.notifier).setController(controller);
+
       if (widget.autoPlay) {
         controller.play();
       }
+      
       controller.setLooping(widget.looping);
-
-      // Update debug info periodically
-      controller.addListener(() {
-        if (mounted) {
-          setState(() {});
-        }
-      });
-
+      controller.setVolume(widget.isMuted ? 0 : 1);
+      
     } catch (e) {
-      debugPrint('Error initializing video: $e');
-      if (mounted) {
-        setState(() {
-          _isInitialized = false;
-        });
-      }
+      debugPrint('Error initializing video controller: $e');
     }
   }
 
@@ -302,4 +290,4 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
       ),
     );
   }
-} 
+}
