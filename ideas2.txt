@@ -1,15 +1,20 @@
-- track watched videos
+x track watched videos
 - preload videos/stream
     - store download of prior x videos so you can go back??
 - refactor?
-- generate fake video data
-    - name, description
-    - tags
-    - fake transcript
-    - ai gen analysis of transcript and otherwise
+x generate fake video data
+    x name, description
+    x tags
+    x fake transcript
+    x ai gen analysis of transcript and otherwise
 - tag videos with subject
     - tag classes/feeds with interests and understanding
     - BASIC recommendation system from get videos
+- generate video files
+    - 10 seconds of video (same dimensions as my phone videos)
+    - lower quality
+    - just the title and description
+    - make a thumbnail
 - tag classes with subject too?
 
 

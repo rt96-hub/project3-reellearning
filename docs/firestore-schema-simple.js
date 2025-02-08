@@ -26,15 +26,14 @@ videos: {
       videoUrl: String,
       duration: Number,
       uploadedAt: Timestamp,
-      updatedAt: Timestamp
+      updatedAt: Timestamp,
+      transcript: String,
     },
     classification: {
       // Creator-provided elements
       explicit: {
-        hashtags: Array<String>,
-        description: String,
-        targetAudience: String,     // Free-form text
-        prerequisites: Array<String> // Video IDs that help understand this content
+        tags: Array<String>,
+        description: String, //ai generated from transcript, title, description, and tags
       },
     },
     engagement: {
