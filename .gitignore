@@ -87,3 +87,5 @@ verify_test_emails.js
 
 # windsurf rules
 .windsurfrules
+reellearning_fe/reellearning.keystore
+reellearning_fe/key.properties
