@@ -7,6 +7,14 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Video Tags collection rules
+    match /videoTags/{tagId} {
+      // Allow authenticated users to read tags
+      allow read: if isAuthenticated();
+      // No write operations allowed through client
+      allow write: if false;
+    }
+
     // Videos collection rules
     match /videos/{videoId} {
       // Allow anyone to read video documents

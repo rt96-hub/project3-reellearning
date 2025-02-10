@@ -32,7 +32,7 @@ videos: {
     classification: {
       // Creator-provided elements
       explicit: {
-        tags: Array<String>,
+        hashtags: Array<String>,
         description: String, //ai generated from transcript, title, description, and tags
       },
     },
@@ -286,5 +286,14 @@ userViews: {
     videoId: Reference,
     classId: Reference,  // Optional, if watched within a class
     watchedAt: Timestamp
+  }
+}
+
+// videoTags collection
+videoTags: {
+  tagId: {
+    tag: String,
+    count: Number,
+    relatedTags: Array<String>
   }
 }

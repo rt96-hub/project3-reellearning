@@ -16,14 +16,22 @@ x generate video files
     x just the title and description
     - make a thumbnail
 - tag classes with subject too?
-- build and deploy
+x build and deploy
+x email verification on deployed??????
 
 - ai
     - ai generated onboarding??? (GOTTA BE FAST THO)
+        x how does this seed the data?
+        x get a list of the 20 most common tags, when you select a tag, it gets 5 more tags related to it, recursively
+        x create an embedding of the tags, and when you select a tag, it gets the top 5 tags related to it (we can precalculate the 5 nearest neighbors and store them)
+        x create a tag table, and when a new video is uploaded, if the tag doesn't exist, it creates it, otherwise it increments the count
+        - eventually, we will run a nightly job to calculate the 5 nearest neighbors for all tags
+        x these tags will be part of the recommendation system, basically looking at the users most liked tags and recommending videos within those and related tags
     - ai generated progress report(what have you done over the last x days)
     - ai generated class report for curators (what have the students been liking/comprehending)
     - ai generated questions randomly in the feed, based on last x videos watched (depends on subject)
     - ai generated badges or achievements???
+
         - badges/achievements page (NFT???)
     
 
@@ -32,3 +40,4 @@ x generate video files
     - search
     - dms
     - notifications
+    - auto binary classification on video upload
