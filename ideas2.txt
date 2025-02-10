@@ -19,6 +19,23 @@ x generate video files
 x build and deploy
 x email verification on deployed??????
 
+x script to remove # from all tags
+    x videos.classification.explicit.hashtags
+    x videoTags.tag
+    x videoTags.relatedTags
+
+- general recommendation system
+    x create a vector for each video
+    - when a video is liked for a user/class, 
+        - it adds the vector to the user/class vector
+        - it adds the tags to the user/class tag preferences map
+    - when we call the load videos function, we do a combined scoring approach
+        - score = alpha * vector similarity + beta * tag similarity
+        - vector similarity is the cosine similarity between the user/class vector and the video vector
+        - tag similarity is the cosine similarity between the user/class tag preferences and the video tags
+
+
+
 - ai
     - ai generated onboarding??? (GOTTA BE FAST THO)
         x how does this seed the data?
@@ -27,6 +44,8 @@ x email verification on deployed??????
         x create a tag table, and when a new video is uploaded, if the tag doesn't exist, it creates it, otherwise it increments the count
         - eventually, we will run a nightly job to calculate the 5 nearest neighbors for all tags
         x these tags will be part of the recommendation system, basically looking at the users most liked tags and recommending videos within those and related tags
+    - add similar onboarding when you create a class
+        - maybe with a search?
     - ai generated progress report(what have you done over the last x days)
     - ai generated class report for curators (what have the students been liking/comprehending)
     - ai generated questions randomly in the feed, based on last x videos watched (depends on subject)

@@ -1,0 +1,114 @@
+1. chemistry_organic  
+2. chemistry_inorganic  
+3. chemistry_bonding  
+4. chemistry_thermodynamics  
+5. chemistry_electrochemistry  
+
+6. physics_classical_mechanics  
+7. physics_electromagnetism  
+8. physics_quantum  
+9. physics_thermodynamics  
+10. physics_relativity  
+
+11. biology_cell  
+12. biology_genetics  
+13. biology_human_anatomy  
+14. biology_ecology  
+15. biology_microbiology  
+
+16. math_calculus  
+17. math_linear_algebra  
+18. math_probability  
+19. math_number_theory  
+20. math_logic  
+
+21. comp_sci_programming  
+22. comp_sci_data_structures  
+23. comp_sci_databases  
+24. comp_sci_machine_learning  
+25. comp_sci_web_dev  
+
+26. economics_micro  
+27. economics_macro  
+28. economics_international  
+29. economics_policy  
+30. economics_trade  
+
+31. history_ancient  
+32. history_world_war  
+33. history_industrial  
+34. history_modern  
+35. history_colonial  
+
+36. geography_physical  
+37. geography_human  
+38. geography_climate  
+39. geography_cartography  
+40. geography_environmental  
+
+41. literature_classical  
+42. literature_modern  
+43. literature_poetry  
+44. literature_drama  
+45. literature_comparative  
+
+46. anthropology_cultural  
+47. anthropology_archaeology  
+48. anthropology_linguistic  
+49. anthropology_ethnology  
+50. anthropology_biological  
+
+51. geology_mineralogy  
+52. geology_plate_tectonics  
+53. geology_rock_formation  
+54. geology_earth_history  
+55. geology_volcanology  
+
+56. astronomy_solar_system  
+57. astronomy_stellar_evolution  
+58. astronomy_cosmology  
+59. astronomy_space_exploration  
+60. astronomy_exoplanets  
+
+61. engineering_mechanical  
+62. engineering_electrical  
+63. engineering_civil  
+64. engineering_software  
+65. engineering_chemical  
+
+66. medicine_human_physiology  
+67. medicine_diagnosis  
+68. medicine_pharmacology  
+69. medicine_public_health  
+70. medicine_surgery  
+
+71. law_constitutional  
+72. law_criminal  
+73. law_civil  
+74. law_international  
+75. law_corporate  
+
+76. business_management  
+77. business_entrepreneurship  
+78. business_strategic_planning  
+79. business_organizational_behavior  
+80. business_ethics  
+
+81. finance_markets  
+82. finance_investment  
+83. finance_corporate  
+84. finance_personal  
+85. finance_risk_management  
+
+86. marketing_digital  
+87. marketing_research  
+88. marketing_brand  
+89. marketing_consumer_behavior  
+90. marketing_content  
+
+91. philosophy_general  
+92. music_theory  
+93. art_history  
+94. sociology_general  
+95. psychology_general  
+96. math_general

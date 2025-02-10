@@ -79,7 +79,7 @@ flutter_*.png
 *.mp4
 *.webm
 
-generated_videos.csv
+*.csv
 
 venv/
 

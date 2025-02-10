@@ -4,6 +4,8 @@ users: {
     createdAt: Timestamp,
     email: String,
     phone: String,
+    tagPreferences: Map<String, Number>,
+    userVector: Array<Number>,
     profile: {
       displayName: String,
       avatarUrl: String,
@@ -30,12 +32,14 @@ videos: {
       transcript: String,
     },
     classification: {
+      videoVector: Array<Number>, //this would be generated on upload by a background function (right now we seeded with chatgpt)
       // Creator-provided elements
       explicit: {
         hashtags: Array<String>,
         description: String, //ai generated from transcript, title, description, and tags
       },
     },
+
     engagement: {
       views: Number,
       likes: Number,
@@ -214,6 +218,8 @@ classes: {
     isPublic: Boolean,
     thumbnail: String,
     memberCount: Number,
+    tagPreferences: Map<String, Number>,
+    classVector: Array<Number>,
   }
 }
 
