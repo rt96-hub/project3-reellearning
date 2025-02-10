@@ -159,8 +159,13 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen> {
       final userId = ref.read(currentUserProvider)?.uid;
       if (userId == null) throw Exception('User not found');
 
+      // Convert selected interests into a Map<String, num>
+      final tagPreferences = Map.fromEntries(
+        _selectedInterests.map((tag) => MapEntry(tag, 1)),
+      );
+
       await FirebaseFirestore.instance.collection('users').doc(userId).update({
-        'interests': _selectedInterests.toList(),
+        'tagPreferences': tagPreferences,
         'onboardingCompleted': true,
       });
 
