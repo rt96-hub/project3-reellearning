@@ -5,36 +5,37 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  Future<void> signUp(String email, String password, String phone) async {
-    try {
-      // Create auth user without signing in
-      final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+Future<void> signUp(String email, String password, String phone) async {
+  try {
+    // Create auth user
+    final userCredential = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
 
-      // Send email verification
-      await userCredential.user!.sendEmailVerification();
+    // Important: Wait for verification email to be sent before signing out
+    await userCredential.user!.sendEmailVerification();
 
-      // Store user data in temporary collection
-      await _firestore.collection('pending_users').doc(userCredential.user!.uid).set({
-        'email': email,
-        'phone': phone,
-        'createdAt': Timestamp.now(),
-      });
+    // Store user data in temporary collection
+    await _firestore.collection('pending_users').doc(userCredential.user!.uid).set({
+      'email': email,
+      'phone': phone,
+      'createdAt': Timestamp.now(),
+    });
 
-      print('Successfully stored pending user data with phone: $phone');
+    // Add a small delay to ensure Firebase operations complete
+    await Future.delayed(const Duration(milliseconds: 500));
 
-      // Sign out immediately in case Firebase auto-signed in
-      await _auth.signOut();
-    } catch (e) {
-      print('Error during signup: $e');
-      if (e is FirebaseAuthException) {
-        throw _handleAuthError(e);
-      }
-      rethrow;
+    // Now safe to sign out
+    await _auth.signOut();
+  } catch (e) {
+    print('Error during signup: $e');
+    if (e is FirebaseAuthException) {
+      throw _handleAuthError(e);
     }
+    rethrow;
   }
+}
 
   Future<UserCredential> signIn(String email, String password) async {
     try {

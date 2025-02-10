@@ -7,10 +7,11 @@ final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 // Stream of auth state changes that includes verification status
 final authStateProvider = StreamProvider<User?>((ref) {
   final authService = ref.watch(authServiceProvider);
-  return authService.authStateChanges().map((user) {
+  return authService.authStateChanges().asyncMap((user) async {
     if (user != null && !user.emailVerified) {
-      // Sign out if email is not verified
-      FirebaseAuth.instance.signOut();
+      // Add a small delay before signing out to allow operations to complete
+      await Future.delayed(const Duration(milliseconds: 500));
+      await FirebaseAuth.instance.signOut();
       return null;
     }
     return user;
