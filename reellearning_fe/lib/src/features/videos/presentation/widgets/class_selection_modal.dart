@@ -110,43 +110,77 @@ class _ClassSelectionModalState extends ConsumerState<ClassSelectionModal> {
     });
   }
 
-  Future<void> _updateVectorForLike(WriteBatch batch, DocumentReference targetRef, bool isAdd) async {
+  Future<void> _updateVectorForLike(WriteBatch batch, String targetId, bool isUser, bool isAdd) async {
     if (widget.interactionType != InteractionType.like) return;
 
-    // Get video vector
-    // i wonder if it is faster to store the vector locally when we get the video objects to play
+    // Get video vector and tags
     final videoDoc = await FirebaseFirestore.instance
         .collection('videos')
         .doc(widget.videoId)
         .get();
     final videoData = videoDoc.data() as Map<String, dynamic>;
     final videoVector = videoData['classification']?['videoVector'] as List<dynamic>?;
+    final videoTags = (videoData['classification']?['explicit']?['hashtags'] as List<dynamic>?)?.cast<String>() ?? [];
     
     if (videoVector == null) return;
 
-    // Get target document (user or class)
-    final targetDoc = await targetRef.get();
-    final targetData = targetDoc.data() as Map<String, dynamic>?;
-    final existingVector = targetData?['userVector'] ?? targetData?['classVector'] as List<dynamic>?;
+    // Get target vector document
+    final collectionName = isUser ? 'userVectors' : 'classVectors';
+    final vectorDoc = await FirebaseFirestore.instance
+        .collection(collectionName)
+        .doc(targetId)
+        .get();
+    
+    if (!vectorDoc.exists) {
+      // If no vector exists, initialize with video vector and tags
+      final tagPreferences = Map.fromEntries(
+        videoTags.map((tag) => MapEntry(tag.toLowerCase(), 1)),
+      );
 
-    if (existingVector == null || existingVector.isEmpty) {
-      // If no vector exists, initialize with video vector
-      batch.update(targetRef, {
-        targetRef.path.startsWith('users/') ? 'userVector' : 'classVector': videoVector,
+      batch.set(FirebaseFirestore.instance.collection(collectionName).doc(targetId), {
+        '${isUser ? 'user' : 'class'}': FirebaseFirestore.instance.collection(isUser ? 'users' : 'classes').doc(targetId),
+        'vector': videoVector,
+        'tagPreferences': tagPreferences,
       });
     } else {
-      // Update existing vector by adding or subtracting video vector
-      final updatedVector = List<num>.from(existingVector.map((e) => e as num));
-      for (var i = 0; i < videoVector.length; i++) {
-        if (isAdd) {
-          updatedVector[i] += (videoVector[i] as num);
-        } else {
-          updatedVector[i] -= (videoVector[i] as num);
+      final existingVector = vectorDoc.data()?['vector'] as List<dynamic>?;
+      final existingTagPrefs = (vectorDoc.data()?['tagPreferences'] as Map<String, dynamic>?) ?? {};
+      
+      if (existingVector != null) {
+        // Update vector
+        final updatedVector = List<num>.from(existingVector.map((e) => e as num));
+        for (var i = 0; i < videoVector.length; i++) {
+          if (isAdd) {
+            updatedVector[i] += (videoVector[i] as num);
+          } else {
+            updatedVector[i] -= (videoVector[i] as num);
+          }
         }
+
+        // Update tag preferences
+        final updatedTagPrefs = Map<String, num>.from(existingTagPrefs.map(
+          (key, value) => MapEntry(key, (value as num))
+        ));
+
+        for (final tag in videoTags) {
+          final normalizedTag = tag.toLowerCase();
+          if (isAdd) {
+            updatedTagPrefs[normalizedTag] = (updatedTagPrefs[normalizedTag] ?? 0) + 1;
+          } else {
+            final currentCount = updatedTagPrefs[normalizedTag] ?? 0;
+            if (currentCount <= 1) {
+              updatedTagPrefs.remove(normalizedTag);
+            } else {
+              updatedTagPrefs[normalizedTag] = currentCount - 1;
+            }
+          }
+        }
+
+        batch.update(FirebaseFirestore.instance.collection(collectionName).doc(targetId), {
+          'vector': updatedVector,
+          'tagPreferences': updatedTagPrefs,
+        });
       }
-      batch.update(targetRef, {
-        targetRef.path.startsWith('users/') ? 'userVector' : 'classVector': updatedVector,
-      });
     }
   }
 
@@ -170,9 +204,6 @@ class _ClassSelectionModalState extends ConsumerState<ClassSelectionModal> {
       if (!isSelected) {
         final docSnapshot = await docRef.get();
         final isNewDocument = !docSnapshot.exists;
-        final docData = docSnapshot.data();
-        final classIds = docData?['classId'] as List<dynamic>?;
-        final hasNoClasses = !docSnapshot.exists || classIds == null || classIds.isEmpty;
 
         final batch = FirebaseFirestore.instance.batch();
 
@@ -188,14 +219,15 @@ class _ClassSelectionModalState extends ConsumerState<ClassSelectionModal> {
 
         if (isNewDocument) {
           await _updateVideoEngagement(batch, true);
+          // Add vector update for user only if this is their first like
+          if (widget.interactionType == InteractionType.like) {
+            await _updateVectorForLike(batch, userId, true, true);    // user vector
+          }
         }
-        
-        // Update class vector
-        await _updateVectorForLike(batch, classRef, true);
-        
-        // Only update user vector if this is their first class like or personal like
-        if (hasNoClasses && !isPersonalFeedSelected) {
-          await _updateVectorForLike(batch, FirebaseFirestore.instance.collection('users').doc(userId), true);
+
+        // Always update class vector when adding a class to likes
+        if (widget.interactionType == InteractionType.like) {
+          await _updateVectorForLike(batch, classId, false, true);  // class vector
         }
 
         await batch.commit();
@@ -215,15 +247,27 @@ class _ClassSelectionModalState extends ConsumerState<ClassSelectionModal> {
           'classId': FieldValue.arrayRemove([classRef]),
         });
 
-        // Update vectors for class only (removing contribution)
-        // User vector remains unchanged until they manually unselect personal feed
-        await _updateVectorForLike(batch, classRef, false);
+        // Get current state to check if this is the last class and if we need to update user vector
+        final docSnapshot = await docRef.get();
+        final currentClassIds = (docSnapshot.data()?['classId'] as List<dynamic>?)?.length ?? 0;
+        
+        if (widget.interactionType == InteractionType.like) {
+          // Always update class vector when removing a class from likes
+          await _updateVectorForLike(batch, classId, false, false);  // class vector
+          
+          // Only update user vector if this was the last class
+          if (currentClassIds <= 1) {
+            await _updateVectorForLike(batch, userId, true, false);    // user vector
+          }
+        }
 
         await batch.commit();
 
         setState(() {
           selectedClassIds.remove(classId);
-          // Keep isPersonalFeedSelected true even if all classes are removed
+          if (selectedClassIds.isEmpty) {
+            isPersonalFeedSelected = true;
+          }
           loadingClassId = null;
         });
       }
@@ -252,16 +296,10 @@ class _ClassSelectionModalState extends ConsumerState<ClassSelectionModal> {
       if (!isPersonalFeedSelected) {
         final batch = FirebaseFirestore.instance.batch();
 
-        // Get existing document to preserve class selections
-        final docSnapshot = await docRef.get();
-        final existingClassIds = docSnapshot.exists 
-            ? (docSnapshot.data()?['classId'] as List<dynamic>? ?? [])
-            : [];
-
         batch.set(docRef, {
           'userId': FirebaseFirestore.instance.collection('users').doc(userId),
           'videoId': FirebaseFirestore.instance.collection('videos').doc(widget.videoId),
-          'classId': existingClassIds,
+          'classId': [],
           if (widget.interactionType == InteractionType.like)
             'likedAt': FieldValue.serverTimestamp()
           else
@@ -269,50 +307,43 @@ class _ClassSelectionModalState extends ConsumerState<ClassSelectionModal> {
         }, SetOptions(merge: true));
 
         await _updateVideoEngagement(batch, true);
-        // Update user vector when adding personal feed like
+        
+        // Add vector update for personal feed likes
         if (widget.interactionType == InteractionType.like) {
-          await _updateVectorForLike(batch, FirebaseFirestore.instance.collection('users').doc(userId), true);
+          await _updateVectorForLike(batch, userId, true, true);
         }
+
         await batch.commit();
 
-        if (mounted) {
-          setState(() {
-            isPersonalFeedSelected = true;
-            isPersonalFeedLoading = false;
-          });
-          widget.onInteractionChanged(true);
-        }
+        setState(() {
+          isPersonalFeedSelected = true;
+          selectedClassIds.clear();
+          isPersonalFeedLoading = false;
+        });
+        widget.onInteractionChanged(true);
       } else if (selectedClassIds.isEmpty) {
-        // Only allow removing personal feed if no classes are selected
         final batch = FirebaseFirestore.instance.batch();
         batch.delete(docRef);
         await _updateVideoEngagement(batch, false);
-        // Update user vector when removing personal feed like (only happens when no classes are selected)
+        
+        // Remove vector contribution when removing from personal feed
         if (widget.interactionType == InteractionType.like) {
-          await _updateVectorForLike(batch, FirebaseFirestore.instance.collection('users').doc(userId), false);
+          await _updateVectorForLike(batch, userId, true, false);
         }
+
         await batch.commit();
 
-        if (mounted) {
-          setState(() {
-            isPersonalFeedSelected = false;
-            isPersonalFeedLoading = false;
-          });
-          widget.onInteractionChanged(false);
-        }
-      } else {
-        // If there are selected classes, don't allow personal feed toggle off
-        if (mounted) {
-          setState(() => isPersonalFeedLoading = false);
-        }
+        setState(() {
+          isPersonalFeedSelected = false;
+          isPersonalFeedLoading = false;
+        });
+        widget.onInteractionChanged(false);
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-        setState(() => isPersonalFeedLoading = false);
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+      setState(() => isPersonalFeedLoading = false);
     }
   }
 
@@ -329,7 +360,6 @@ class _ClassSelectionModalState extends ConsumerState<ClassSelectionModal> {
     }
 
     return Dialog(
-      key: ValueKey('class_selection_modal_${widget.videoId}'),
       child: Container(
         width: MediaQuery.of(context).size.width * 0.8,
         height: MediaQuery.of(context).size.height * 0.8,

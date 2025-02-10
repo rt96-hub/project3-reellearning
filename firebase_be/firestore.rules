@@ -208,6 +208,26 @@ service cloud.firestore {
                           membershipId.split('_')[0] == request.auth.uid;
     }
 
+    // User Vectors collection rules
+    match /userVectors/{userId} {
+      allow read: if true;  // Anyone can read vectors for recommendations
+      allow write: if isAuthenticated() && 
+                  request.auth.uid == userId;  // Only user can update their vector
+    }
+
+    // Class Vectors collection rules
+    match /classVectors/{classId} {
+      // Helper function to check if user is a curator
+      function isCurator() {
+        let membershipId = request.auth.uid + '_' + classId;
+        return exists(/databases/$(database)/documents/classMembership/$(membershipId)) &&
+               get(/databases/$(database)/documents/classMembership/$(membershipId)).data.role == 'curator';
+      }
+
+      allow read: if true;
+      allow write: if isAuthenticated() && isCurator();
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;

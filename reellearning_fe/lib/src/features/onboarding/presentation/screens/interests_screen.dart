@@ -164,10 +164,40 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen> {
         _selectedInterests.map((tag) => MapEntry(tag, 1)),
       );
 
-      await FirebaseFirestore.instance.collection('users').doc(userId).update({
-        'tagPreferences': tagPreferences,
+      final batch = FirebaseFirestore.instance.batch();
+
+      // Update user document to mark onboarding as complete
+      batch.update(FirebaseFirestore.instance.collection('users').doc(userId), {
         'onboardingCompleted': true,
       });
+
+      // Get or create user vector document
+      final userVectorRef = FirebaseFirestore.instance.collection('userVectors').doc(userId);
+      final userVectorDoc = await userVectorRef.get();
+
+      if (!userVectorDoc.exists) {
+        // If no vector exists, initialize with zero vector and tag preferences
+        batch.set(userVectorRef, {
+          'user': FirebaseFirestore.instance.collection('users').doc(userId),
+          'vector': List<num>.filled(512, 0), // Assuming 512-dimensional vectors, adjust as needed
+          'tagPreferences': tagPreferences,
+        });
+      } else {
+        // If vector exists, update tag preferences
+        final existingTagPrefs = (userVectorDoc.data()?['tagPreferences'] as Map<String, dynamic>?) ?? {};
+        final updatedTagPrefs = Map<String, num>.from(existingTagPrefs);
+        
+        // Add new tag preferences
+        for (final tag in _selectedInterests) {
+          updatedTagPrefs[tag] = (updatedTagPrefs[tag] ?? 0) + 1;
+        }
+
+        batch.update(userVectorRef, {
+          'tagPreferences': updatedTagPrefs,
+        });
+      }
+
+      await batch.commit();
 
       if (mounted) {
         context.go('/');
