@@ -176,7 +176,7 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && 
-        docId.split('_')[0] == request.auth.uid && 
+        docId.split('_')[0] == request.auth.uid &&
         request.resource.data.userId == resource.data.userId &&
         request.resource.data.videoId == resource.data.videoId &&
         request.resource.data.comprehensionLevel in ['not_understood', 'partially_understood', 'fully_understood'];

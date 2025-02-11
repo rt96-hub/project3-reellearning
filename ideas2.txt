@@ -56,6 +56,12 @@ x script to remove # from all tags
                 - on the first opened page, it shows all the actual firebase data
                 - the report document is created sans body, the result is streamed to the page
                 - once the streaming is done, the body is updated with the result?
+            - build out report detail function
+                - properly query the data
+                    - can I test locally with python?
+                    - dont store the entire video data, maybe for the videos watched, we only store the time watched and the video title? or at least compare speed (or no actual video data at all, just the count of videos watched)
+                - connect to openai to feed summary info
+                    - how to set enviroment variables?
         - ADD QUESTIONS ANSWERED TO REPORT (NEED to get the questions in first though)
         - do one time generate report function first, then set up scheduled job to call those functions
         - every day, send a push notification? And you can look at a summary of the day? at 9 am of the next day
@@ -95,3 +101,9 @@ x script to remove # from all tags
     - dms
     - notifications
     - auto binary classification on video upload
+
+- on userViews and bookmarks and likes
+    - instead of an array of classIds, use a map of classId to timestamp of when the user watched/bookmarked/liked the video
+- store on classMembership
+    - somehow need to track leaving and joining dates 
+    - maybe have to track it transactionally? the class document stores the actual incremented count, so it only has to be queried for the report

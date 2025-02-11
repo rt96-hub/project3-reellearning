@@ -90,8 +90,8 @@ class UserReportDetailScreen extends StatelessWidget {
                               reportData['videosWatched']?.toString() ?? '0',
                             ),
                             _buildMetricTile(
-                              'Videos Understood',
-                              reportData['understandings']?.toString() ?? '0',
+                              'Classes Created',
+                              reportData['classesCreated']?.toString() ?? '0',
                             ),
                           ],
                         ),
@@ -117,10 +117,38 @@ class UserReportDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
 
-                  // Classes Created
-                  _buildMetricTile(
-                    'Classes Created',
-                    reportData['classesCreated']?.toString() ?? '0',
+                  // Comprehension Metrics
+                  const Text(
+                    'Comprehension',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildMetricTile(
+                          'Not Understood',
+                          (reportData['comprehension']?['not_understood'] ?? 0).toString(),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildMetricTile(
+                          'Partially',
+                          (reportData['comprehension']?['partially_understood'] ?? 0).toString(),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildMetricTile(
+                          'Fully',
+                          (reportData['comprehension']?['fully_understood'] ?? 0).toString(),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 24),
 

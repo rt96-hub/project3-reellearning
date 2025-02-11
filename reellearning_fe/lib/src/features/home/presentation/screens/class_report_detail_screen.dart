@@ -52,7 +52,7 @@ class ClassReportDetailScreen extends StatelessWidget {
                     future: (report['classId'] as DocumentReference).get(),
                     builder: (context, classSnapshot) {
                       final className = classSnapshot.hasData
-                          ? (classSnapshot.data!.data() as Map<String, dynamic>)['name'] ?? 'Unknown Class'
+                          ? (classSnapshot.data!.data() as Map<String, dynamic>)['title'] ?? 'Unknown Class'
                           : 'Loading...';
                       
                       return Text(
@@ -90,10 +90,6 @@ class ClassReportDetailScreen extends StatelessWidget {
                               reportData['membersJoined']?.toString() ?? '0',
                             ),
                             _buildMetricTile(
-                              'Members Left',
-                              reportData['membersLeft']?.toString() ?? '0',
-                            ),
-                            _buildMetricTile(
                               'Active Members',
                               reportData['membersActive']?.toString() ?? '0',
                             ),
@@ -106,10 +102,6 @@ class ClassReportDetailScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildMetricTile(
-                              'Videos Watched',
-                              reportData['videosWatched']?.toString() ?? '0',
-                            ),
                             _buildMetricTile(
                               'Videos Liked',
                               reportData['videosLiked']?.toString() ?? '0',

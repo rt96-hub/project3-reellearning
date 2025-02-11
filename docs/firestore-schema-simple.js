@@ -304,7 +304,6 @@ userViews: {
   userViewId: {
     userId: Reference,
     videoId: Reference,
-    classId: array<re,  // Optional, if watched within a class
     watchedAt: Timestamp
   }
 }
@@ -321,42 +320,46 @@ videoTags: {
 
 
 // userProgressReport collection
-userProgressReports: {
-  userId: Reference,
+userProgressReports: 
+{
+  userId: DocumentReference,  // Reference to users/{userId}
   createdAt: Timestamp,
   startDate: Timestamp,
   endDate: Timestamp,
-  type: String, // 'daily', 'weekly', 'monthly', 'yearly', 'custom'
-  status: String, // 'in_progress', 'completed'
-  reportData: {
-    videosWatched: Number,
-    videosLiked: Number,
-    videosBookmarked: Number,
-    classesCreated: Number,
-    comments: Number,
-    commentLikes: Number,
-    commentReplies: Number,
-    commentReplyLikes: Number,
-    understandings: Number,
-    body: String,
-  }
+  type: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom',
+  status: 'in_progress' | 'complete' | 'error',
+  reportData?: {
+    videosWatched: number,
+    videosLiked: number,
+    videosBookmarked: number,
+    classesCreated: number,
+    comprehension: {
+      not_understood: number,
+      partially_understood: number,
+      fully_understood: number
+    },
+    body: string,        // LLM-generated report content
+    llmDuration: number  // Time taken to generate LLM response in seconds
+  },
+  error?: string        // Present only if status is 'error'
 }
 
 // classProgressReport collection
-classProgressReports: {
-  classId: Reference,
+classProgressReports:
+{
+  classId: DocumentReference,  // Reference to classes/{classId}
   createdAt: Timestamp,
   startDate: Timestamp,
   endDate: Timestamp,
-  type: String, // 'daily', 'weekly', 'monthly', 'yearly', 'custom'
-  status: String, // 'in_progress', 'completed'
-  reportData: {
-    membersJoined: Number,
-    membersLeft: Number,
-    membersActive: Number,
-    videosWatched: Number,
-    videosLiked: Number,
-    videosBookmarked: Number,
-    body: String,
-  }
+  type: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom',
+  status: 'in_progress' | 'complete' | 'error',
+  reportData?: {
+    membersActive: number,
+    membersJoined: number,
+    videosLiked: number,
+    videosBookmarked: number,
+    body: string,        // LLM-generated report content
+    llmDuration: number  // Time taken to generate LLM response in seconds
+  },
+  error?: string        // Present only if status is 'error'
 }

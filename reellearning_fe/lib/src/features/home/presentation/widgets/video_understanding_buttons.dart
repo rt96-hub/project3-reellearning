@@ -113,9 +113,12 @@ class _VideoUnderstandingButtonsState extends State<VideoUnderstandingButtons> {
             'nextRecommendedReview': _calculateNextReview(level, now),
           });
         } else {
+          final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+          final videoRef = FirebaseFirestore.instance.collection('videos').doc(widget.videoId);
+          
           final data = {
-            'userId': user.uid,
-            'videoId': widget.videoId,
+            'userId': userRef,
+            'videoId': videoRef,
             'classId': widget.classId != null ? [widget.classId] : [],
             'comprehensionLevel': level,
             'assessedAt': now,
