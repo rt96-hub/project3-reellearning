@@ -104,9 +104,9 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
     final position = _controller!.value.position;
     final progress = position.inMilliseconds / duration.inMilliseconds;
     
-    // Record view when 90% of video is watched and it's actively playing
-    if (progress >= 0.9 && !_hasRecordedView && _isActivelyPlaying) {
-      debugPrint('Video reached 90% completion. Progress: ${(progress * 100).toStringAsFixed(1)}%');
+    // Record view when 1% of video is watched and it's actively playing
+    if (progress >= 0.01 && !_hasRecordedView && _isActivelyPlaying) {
+      debugPrint('Video reached 1% completion. Progress: ${(progress * 100).toStringAsFixed(1)}%');
       debugPrint('Position: ${position.inSeconds}s / Duration: ${duration.inSeconds}s');
       _recordView();
     }

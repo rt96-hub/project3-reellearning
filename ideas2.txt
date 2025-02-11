@@ -44,10 +44,15 @@ x script to remove # from all tags
         x create a tag table, and when a new video is uploaded, if the tag doesn't exist, it creates it, otherwise it increments the count
         - eventually, we will run a nightly job to calculate the 5 nearest neighbors for all tags
         x these tags will be part of the recommendation system, basically looking at the users most liked tags and recommending videos within those and related tags
-    - add similar onboarding when you create a class
-        - maybe with a search?
+    x add similar onboarding when you create a class
+        x maybe with a search?
     - ai generated progress report(what have you done over the last x days)
     - ai generated class report for curators (what have the students been liking/comprehending)
+    - ai generated suggested reading or videos based on what the user has watched
+        - or based on class
+        - part of the progress report?
+        - agent or simple llm that somehow summarizes activity, and then uses the summary to query the web for relevant videos/articles/etc.
+        - need to find a service that can easily query the web for relevant videos/books/articles
     - ai generated questions randomly in the feed, based on last x videos watched (depends on subject)
     - ai generated badges or achievements???
 
