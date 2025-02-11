@@ -56,6 +56,7 @@ x script to remove # from all tags
                 - on the first opened page, it shows all the actual firebase data
                 - the report document is created sans body, the result is streamed to the page
                 - once the streaming is done, the body is updated with the result?
+        - ADD QUESTIONS ANSWERED TO REPORT (NEED to get the questions in first though)
         - do one time generate report function first, then set up scheduled job to call those functions
         - every day, send a push notification? And you can look at a summary of the day? at 9 am of the next day
         - "your mm/dd/yyyy summary"

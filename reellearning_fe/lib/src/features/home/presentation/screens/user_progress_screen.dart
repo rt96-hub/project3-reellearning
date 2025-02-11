@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../widgets/progress_report_modal.dart';
+import 'user_report_detail_screen.dart';
 
 class UserProgressScreen extends ConsumerWidget {
   final String? userId;
@@ -156,10 +157,11 @@ class UserProgressScreen extends ConsumerWidget {
                                 ),
                                 trailing: const Icon(Icons.chevron_right),
                                 onTap: () {
-                                  // TODO: Navigate to report details
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Report details coming soon'),
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => UserReportDetailScreen(
+                                        reportId: reports[index].id,
+                                      ),
                                     ),
                                   );
                                 },

@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/class_model.dart';
 import '../widgets/progress_report_modal.dart';
+import 'class_report_detail_screen.dart';
 
 class ClassProgressScreen extends ConsumerWidget {
   final String classId;
@@ -158,10 +159,11 @@ class ClassProgressScreen extends ConsumerWidget {
                               ),
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () {
-                                // TODO: Navigate to report details
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Report details coming soon'),
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (context) => ClassReportDetailScreen(
+                                      reportId: reports[index].id,
+                                    ),
                                   ),
                                 );
                               },
