@@ -48,8 +48,14 @@ x script to remove # from all tags
         x maybe with a search?
     - ai generated progress report(what have you done over the last x days)
         - userProgressReport collection, progress report page
-            - list of historical reports
-            - generate new report button, last x days, weeks, hours, months, years
+            x list of historical reports
+            x generate new report button, last x days, weeks, hours, months, years
+            x need to make the firestore rules allow for reading (creation is handled on the endpoint)
+            - how to leave the modal before the report is finished, send a message when its done
+            - if still on the page, does it open you to the report detail page? Can we load it and let it stream the results?
+                - on the first opened page, it shows all the actual firebase data
+                - the report document is created sans body, the result is streamed to the page
+                - once the streaming is done, the body is updated with the result?
         - do one time generate report function first, then set up scheduled job to call those functions
         - every day, send a push notification? And you can look at a summary of the day? at 9 am of the next day
         - "your mm/dd/yyyy summary"

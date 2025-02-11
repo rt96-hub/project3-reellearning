@@ -833,3 +833,322 @@ def get_filtered_videos(req: https_fn.Request) -> https_fn.Response:
         headers=cors_headers,
         content_type='application/json'
     )
+
+@https_fn.on_request()
+def generate_user_report(req: https_fn.Request) -> https_fn.Response:
+    # Set CORS headers for all responses
+    cors_headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '3600',
+    }
+    
+    # Handle OPTIONS request (preflight)
+    if req.method == 'OPTIONS':
+        return https_fn.Response('', headers=cors_headers, status=204)
+    
+    # Verify authentication
+    auth_header = req.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return https_fn.Response(
+            json.dumps({'error': 'Unauthorized - Invalid token format'}),
+            status=401,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+    
+    try:
+        token = auth_header.split('Bearer ')[1]
+        decoded_token = auth.verify_id_token(token)
+        user_id = decoded_token['uid']
+    except Exception as e:
+        return https_fn.Response(
+            json.dumps({'error': f'Unauthorized - Invalid token: {str(e)}'}),
+            status=401,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+
+    try:
+        # Parse request body
+        request_json = req.get_json()
+        user_id = request_json.get('id')  # This is now the user ID
+        start_time = request_json.get('startTime')
+        end_time = request_json.get('endTime')
+        report_type = request_json.get('type', 'custom')
+
+        if not all([user_id, start_time, end_time]):
+            return https_fn.Response(
+                json.dumps({'error': 'Missing required parameters'}),
+                status=400,
+                headers=cors_headers,
+                content_type='application/json'
+            )
+
+        # Validate report type
+        valid_types = ['daily', 'weekly', 'monthly', 'yearly', 'custom']
+        if report_type not in valid_types:
+            return https_fn.Response(
+                json.dumps({'error': f'Invalid report type. Must be one of: {", ".join(valid_types)}'}),
+                status=400,
+                headers=cors_headers,
+                content_type='application/json'
+            )
+
+        # Initialize Firestore
+        db = firestore.client()
+        
+        # Check for in-progress reports
+        user_ref = db.collection('users').document(user_id)
+        in_progress_reports = (
+            db.collection('userProgressReports')
+            .where('userId', '==', user_ref)
+            .where('status', '==', 'in_progress')
+            .limit(1)
+            .get()
+        )
+        
+        if len(in_progress_reports) > 0:
+            return https_fn.Response(
+                json.dumps({
+                    'error': 'A report is already being generated for this user',
+                    'reportId': in_progress_reports[0].id
+                }),
+                status=409,  # Conflict
+                headers=cors_headers,
+                content_type='application/json'
+            )
+        
+        # Create report document with generated ID and initial in_progress status
+        new_report_ref = db.collection('userProgressReports').document()
+        
+        # Create initial report data
+        report_data = {
+            'userId': user_ref,
+            'createdAt': datetime.now(),
+            'startDate': datetime.fromisoformat(start_time),
+            'endDate': datetime.fromisoformat(end_time),
+            'type': report_type,
+            'status': 'in_progress'
+        }
+
+        # Set the initial data
+        new_report_ref.set(report_data)
+
+        try:
+            # TODO: Replace with actual AI processing
+            # For now, simulate AI processing with placeholder data
+            # This is where we'll make the AI call to generate the report
+            
+            # Query data for the time period
+            start_date = datetime.fromisoformat(start_time)
+            end_date = datetime.fromisoformat(end_time)
+            
+            # Example: Count videos watched
+            videos_watched = db.collection('userViews')\
+                .where('userId', '==', user_ref)\
+                .where('watchedAt', '>=', start_date)\
+                .where('watchedAt', '<=', end_date)\
+                .count()\
+                .get()[0][0].value
+
+            # Update report with AI-generated content and complete status
+            new_report_ref.update({
+                'status': 'complete',
+                'reportData': {
+                    'videosWatched': videos_watched,
+                    'videosLiked': 1,  # Placeholder
+                    'videosBookmarked': 1,  # Placeholder
+                    'classesCreated': 1,  # Placeholder
+                    'comments': 1,  # Placeholder
+                    'commentLikes': 1,  # Placeholder
+                    'commentReplies': 1,  # Placeholder
+                    'commentReplyLikes': 1,  # Placeholder
+                    'understandings': 1,  # Placeholder
+                    'body': 'AI-generated report content will go here'  # Placeholder
+                }
+            })
+
+        except Exception as e:
+            # If AI processing fails, update status to error
+            new_report_ref.update({
+                'status': 'error',
+                'error': str(e)
+            })
+            raise e
+
+        return https_fn.Response(
+            json.dumps({
+                'success': True,
+                'reportId': new_report_ref.id
+            }),
+            headers=cors_headers,
+            content_type='application/json'
+        )
+
+    except Exception as e:
+        return https_fn.Response(
+            json.dumps({'error': f'Error generating report: {str(e)}'}),
+            status=500,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+
+@https_fn.on_request()
+def generate_class_report(req: https_fn.Request) -> https_fn.Response:
+    # Set CORS headers for all responses
+    cors_headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '3600',
+    }
+    
+    # Handle OPTIONS request (preflight)
+    if req.method == 'OPTIONS':
+        return https_fn.Response('', headers=cors_headers, status=204)
+    
+    # Verify authentication
+    auth_header = req.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return https_fn.Response(
+            json.dumps({'error': 'Unauthorized - Invalid token format'}),
+            status=401,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+    
+    try:
+        token = auth_header.split('Bearer ')[1]
+        decoded_token = auth.verify_id_token(token)
+        user_id = decoded_token['uid']
+    except Exception as e:
+        return https_fn.Response(
+            json.dumps({'error': f'Unauthorized - Invalid token: {str(e)}'}),
+            status=401,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+
+    try:
+        # Parse request body
+        request_json = req.get_json()
+        class_id = request_json.get('id')  # This is now the class ID
+        start_time = request_json.get('startTime')
+        end_time = request_json.get('endTime')
+        report_type = request_json.get('type', 'custom')
+
+        if not all([class_id, start_time, end_time]):
+            return https_fn.Response(
+                json.dumps({'error': 'Missing required parameters'}),
+                status=400,
+                headers=cors_headers,
+                content_type='application/json'
+            )
+
+        # Validate report type
+        valid_types = ['daily', 'weekly', 'monthly', 'yearly', 'custom']
+        if report_type not in valid_types:
+            return https_fn.Response(
+                json.dumps({'error': f'Invalid report type. Must be one of: {", ".join(valid_types)}'}),
+                status=400,
+                headers=cors_headers,
+                content_type='application/json'
+            )
+
+        # Initialize Firestore
+        db = firestore.client()
+        
+        # Check for in-progress reports
+        class_ref = db.collection('classes').document(class_id)
+        in_progress_reports = (
+            db.collection('classProgressReports')
+            .where('classId', '==', class_ref)
+            .where('status', '==', 'in_progress')
+            .limit(1)
+            .get()
+        )
+        
+        if len(in_progress_reports) > 0:
+            return https_fn.Response(
+                json.dumps({
+                    'error': 'A report is already being generated for this class',
+                    'reportId': in_progress_reports[0].id
+                }),
+                status=409,  # Conflict
+                headers=cors_headers,
+                content_type='application/json'
+            )
+        
+        # Create report document with generated ID and initial in_progress status
+        new_report_ref = db.collection('classProgressReports').document()
+        
+        # Create initial report data
+        report_data = {
+            'classId': class_ref,
+            'createdAt': datetime.now(),
+            'startDate': datetime.fromisoformat(start_time),
+            'endDate': datetime.fromisoformat(end_time),
+            'type': report_type,
+            'status': 'in_progress'
+        }
+
+        # Set the initial data
+        new_report_ref.set(report_data)
+
+        try:
+            # TODO: Replace with actual AI processing
+            # For now, simulate AI processing with placeholder data
+            # This is where we'll make the AI call to generate the report
+            
+            # Query data for the time period
+            start_date = datetime.fromisoformat(start_time)
+            end_date = datetime.fromisoformat(end_time)
+            
+            # Example: Count active members
+            active_members = db.collection('userViews')\
+                .where('classId', '==', class_ref)\
+                .where('watchedAt', '>=', start_date)\
+                .where('watchedAt', '<=', end_date)\
+                .get()
+            unique_members = len(set(doc.get('userId').id for doc in active_members))
+
+            # Update report with AI-generated content and complete status
+            new_report_ref.update({
+                'status': 'complete',
+                'reportData': {
+                    'membersJoined': 1,  # Placeholder
+                    'membersLeft': 1,  # Placeholder
+                    'membersActive': unique_members,
+                    'videosWatched': 1,  # Placeholder
+                    'videosLiked': 1,  # Placeholder
+                    'videosBookmarked': 1,  # Placeholder
+                    'body': 'AI-generated report content will go here'  # Placeholder
+                }
+            })
+
+        except Exception as e:
+            # If AI processing fails, update status to error
+            new_report_ref.update({
+                'status': 'error',
+                'error': str(e)
+            })
+            raise e
+
+        return https_fn.Response(
+            json.dumps({
+                'success': True,
+                'reportId': new_report_ref.id
+            }),
+            headers=cors_headers,
+            content_type='application/json'
+        )
+
+    except Exception as e:
+        return https_fn.Response(
+            json.dumps({'error': f'Error generating report: {str(e)}'}),
+            status=500,
+            headers=cors_headers,
+            content_type='application/json'
+        )

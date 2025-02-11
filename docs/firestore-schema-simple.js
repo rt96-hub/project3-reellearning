@@ -317,3 +317,46 @@ videoTags: {
     relatedTags: Array<String>
   }
 }
+
+
+
+// userProgressReport collection
+userProgressReports: {
+  userId: Reference,
+  createdAt: Timestamp,
+  startDate: Timestamp,
+  endDate: Timestamp,
+  type: String, // 'daily', 'weekly', 'monthly', 'yearly', 'custom'
+  status: String, // 'in_progress', 'completed'
+  reportData: {
+    videosWatched: Number,
+    videosLiked: Number,
+    videosBookmarked: Number,
+    classesCreated: Number,
+    comments: Number,
+    commentLikes: Number,
+    commentReplies: Number,
+    commentReplyLikes: Number,
+    understandings: Number,
+    body: String,
+  }
+}
+
+// classProgressReport collection
+classProgressReports: {
+  classId: Reference,
+  createdAt: Timestamp,
+  startDate: Timestamp,
+  endDate: Timestamp,
+  type: String, // 'daily', 'weekly', 'monthly', 'yearly', 'custom'
+  status: String, // 'in_progress', 'completed'
+  reportData: {
+    membersJoined: Number,
+    membersLeft: Number,
+    membersActive: Number,
+    videosWatched: Number,
+    videosLiked: Number,
+    videosBookmarked: Number,
+    body: String,
+  }
+}

@@ -7,6 +7,23 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // User Progress Reports collection rules
+    match /userProgressReports/{reportId} {
+      // Users can read their own reports
+      allow read: if isAuthenticated() && 
+                 request.auth.uid == get(resource.data.userId).id;
+      // Backend creates reports, no client-side writes
+      allow write: if false;
+    }
+
+    // Class Progress Reports collection rules
+    match /classProgressReports/{reportId} {
+      allow read: if isAuthenticated() && 
+                 exists(/databases/$(database)/documents/classMembership/$(request.auth.uid + '_' + get(resource.data.classId).id)) &&
+                 get(/databases/$(database)/documents/classMembership/$(request.auth.uid + '_' + get(resource.data.classId).id)).data.role == 'curator';
+      allow write: if false;
+    }
+
     // Video Tags collection rules
     match /videoTags/{tagId} {
       // Allow authenticated users to read tags
