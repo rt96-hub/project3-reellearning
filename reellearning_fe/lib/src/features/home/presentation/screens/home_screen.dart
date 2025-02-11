@@ -90,7 +90,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       }
 
       // Check if we need to load more videos
-      if (videos.length - newIndex <= 2) {
+      if (videos.length - newIndex <= 4) {
         print('[HomeScreen] Near end of feed, loading more videos');
         ref.read(paginatedVideoProvider.notifier).loadMore();
       }

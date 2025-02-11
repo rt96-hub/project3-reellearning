@@ -17,8 +17,10 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
+
+
 def clean_video_hashtags():
-    """Remove '#' from hashtags in videos collection."""
+    """Remove '#' from hashtags and convert to lowercase in videos collection."""
     videos_ref = db.collection('videos')
     batch = db.batch()
     batch_count = 0
@@ -33,8 +35,8 @@ def clean_video_hashtags():
                 video_data = video.to_dict()
                 hashtags = video_data.get('classification', {}).get('explicit', {}).get('hashtags', [])
                 
-                # Check if any hashtags need cleaning
-                cleaned_hashtags = [tag.replace('#', '') for tag in hashtags]
+                # Check if any hashtags need cleaning and convert to lowercase
+                cleaned_hashtags = [tag.replace('#', '').lower() for tag in hashtags]
                 
                 # Only update if changes were made
                 if cleaned_hashtags != hashtags:
@@ -68,7 +70,7 @@ def clean_video_hashtags():
         raise
 
 def clean_video_tags():
-    """Remove '#' from tags in videoTags collection."""
+    """Remove '#' from tags and convert to lowercase in videoTags collection."""
     tags_ref = db.collection('videoTags')
     batch = db.batch()
     batch_count = 0
@@ -84,9 +86,9 @@ def clean_video_tags():
                 original_tag = tag_data.get('tag', '')
                 related_tags = tag_data.get('relatedTags', [])
                 
-                # Clean main tag and related tags
-                cleaned_tag = original_tag.replace('#', '')
-                cleaned_related = [tag.replace('#', '') for tag in related_tags]
+                # Clean main tag and related tags, convert to lowercase
+                cleaned_tag = original_tag.replace('#', '').lower()
+                cleaned_related = [tag.replace('#', '').lower() for tag in related_tags]
                 
                 # Only update if changes were made
                 if cleaned_tag != original_tag or cleaned_related != related_tags:

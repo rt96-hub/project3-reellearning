@@ -6,6 +6,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/video_model.dart';
 import './video_state_provider.dart';
+import 'dart:math' as math;
 
 final videoProvider = StreamProvider.autoDispose((ref) {
   return FirebaseFirestore.instance
@@ -96,7 +97,7 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
 
   final Ref ref;
   bool _isLoading = false;
-  final int _batchSize = 5;
+  final int _batchSize = 10;
   static const int _maxQueueSize = 50;  // Maximum number of videos to keep in queue
   bool _isAdjustingIndex = false;  // Flag to prevent index update loops
   
@@ -130,7 +131,7 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
       // Build URL with channel ID if present
       var url = Uri.parse('$_functionUrl?limit=$_batchSize');
       if (channelId != null) {
-        url = Uri.parse('$_functionUrl?limit=$_batchSize&channel_id=$channelId');
+        url = Uri.parse('$_functionUrl?limit=$_batchSize&source_type=class&source_id=$channelId');
       }
       print('[PaginatedVideoNotifier] Requesting URL: $url');
       
@@ -145,6 +146,40 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        
+        // Log debug information
+        if (data['debug_info'] != null) {
+          print('\n[PaginatedVideoNotifier] Debug Info:');
+          
+          // Log decision path first
+          final decisionPath = data['debug_info']['decision_path'];
+          print('Decision Path:');
+          print('  Case: ${decisionPath['case']}');
+          print('  Reason: ${decisionPath['reason']}');
+          print('  Details: ${json.encode(decisionPath['details'])}');
+          
+          print('\nRecommendation Type: ${data['debug_info']['recommendation_type']}');
+          print('Source Vector Info: ${json.encode(data['debug_info']['source_vector_info'])}');
+          print('Total Candidates: ${data['debug_info']['total_candidates']}');
+          print('Final Selected: ${data['debug_info']['final_selected']}');
+          print('Excluded Videos: ${data['debug_info']['excluded_videos'].length}');
+          
+          // Print similarity scores for top 5 videos
+          final scores = data['debug_info']['similarity_scores'];
+          if (scores.isNotEmpty) {
+            print('\nTop 5 Similarity Scores:');
+            final sortedScores = List.from(scores)
+              ..sort((a, b) => (b['combined_score'] as num).compareTo(a['combined_score'] as num));
+            for (var i = 0; i < math.min(5, sortedScores.length); i++) {
+              print('Video ${sortedScores[i]['video_id']}: '
+                  'Combined: ${sortedScores[i]['combined_score'].toStringAsFixed(3)}, '
+                  'Vector: ${sortedScores[i]['vector_similarity'].toStringAsFixed(3)}, '
+                  'Tag: ${sortedScores[i]['tag_similarity'].toStringAsFixed(3)}');
+            }
+          }
+          print(''); // Empty line for readability
+        }
+        
         final videos = (data['videos'] as List).map((videoJson) async {
           // If the video URL is a gs:// URL, convert it to a download URL
           String videoUrl = videoJson['videoUrl'];

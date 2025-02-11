@@ -143,8 +143,24 @@ class _ClassSelectionModalState extends ConsumerState<ClassSelectionModal> {
         'tagPreferences': tagPreferences,
       });
     } else {
-      final existingVector = vectorDoc.data()?['vector'] as List<dynamic>?;
+      var existingVector = vectorDoc.data()?['vector'] as List<dynamic>?;
       final existingTagPrefs = (vectorDoc.data()?['tagPreferences'] as Map<String, dynamic>?) ?? {};
+      
+      if (existingVector == null && isAdd) {
+        // Document exists (from onboarding) but no vector yet - initialize with this video's vector
+        // and merge new tags with existing tag preferences
+        final updatedTagPrefs = Map<String, num>.from(existingTagPrefs);
+        for (final tag in videoTags) {
+          final normalizedTag = tag.toLowerCase();
+          updatedTagPrefs[normalizedTag] = (updatedTagPrefs[normalizedTag] ?? 0) + 1;
+        }
+
+        batch.update(FirebaseFirestore.instance.collection(collectionName).doc(targetId), {
+          'vector': videoVector,
+          'tagPreferences': updatedTagPrefs,
+        });
+        existingVector = videoVector;
+      }
       
       if (existingVector != null) {
         // Update vector

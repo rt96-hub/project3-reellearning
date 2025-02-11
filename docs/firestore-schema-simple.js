@@ -4,14 +4,28 @@ users: {
     createdAt: Timestamp,
     email: String,
     phone: String,
-    tagPreferences: Map<String, Number>,
-    userVector: Array<Number>,
     profile: {
       displayName: String,
       avatarUrl: String,
       biography: String,
     },
     uid: String,
+  }
+}
+
+//userVectors collection
+userVectors: {
+  userId: {
+    tagPreferences: Map<String, Number>,
+    vector: Array<Number>,
+  }
+}
+
+//classVectors collection
+classVectors: {
+  classId: {
+    tagPreferences: Map<String, Number>,
+    vector: Array<Number>,
   }
 }
 
@@ -290,7 +304,7 @@ userViews: {
   userViewId: {
     userId: Reference,
     videoId: Reference,
-    classId: Reference,  // Optional, if watched within a class
+    classId: array<re,  // Optional, if watched within a class
     watchedAt: Timestamp
   }
 }

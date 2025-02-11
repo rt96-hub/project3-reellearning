@@ -176,14 +176,13 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen> {
       final userVectorDoc = await userVectorRef.get();
 
       if (!userVectorDoc.exists) {
-        // If no vector exists, initialize with zero vector and tag preferences
+        // Initialize only tag preferences, vector will be added on first like
         batch.set(userVectorRef, {
           'user': FirebaseFirestore.instance.collection('users').doc(userId),
-          'vector': List<num>.filled(512, 0), // Assuming 512-dimensional vectors, adjust as needed
           'tagPreferences': tagPreferences,
         });
       } else {
-        // If vector exists, update tag preferences
+        // If vector document exists, update tag preferences
         final existingTagPrefs = (userVectorDoc.data()?['tagPreferences'] as Map<String, dynamic>?) ?? {};
         final updatedTagPrefs = Map<String, num>.from(existingTagPrefs);
         

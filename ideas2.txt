@@ -26,9 +26,9 @@ x script to remove # from all tags
 
 - general recommendation system
     x create a vector for each video
-    - when a video is liked for a user/class, 
-        - it adds the vector to the user/class vector
-        - it adds the tags to the user/class tag preferences map
+    x when a video is liked for a user/class, 
+        x it adds the vector to the user/class vector
+        x it adds the tags to the user/class tag preferences map
     - when we call the load videos function, we do a combined scoring approach
         - score = alpha * vector similarity + beta * tag similarity
         - vector similarity is the cosine similarity between the user/class vector and the video vector
@@ -37,7 +37,7 @@ x script to remove # from all tags
 
 
 - ai
-    - ai generated onboarding??? (GOTTA BE FAST THO)
+    x ai generated onboarding??? (GOTTA BE FAST THO)
         x how does this seed the data?
         x get a list of the 20 most common tags, when you select a tag, it gets 5 more tags related to it, recursively
         x create an embedding of the tags, and when you select a tag, it gets the top 5 tags related to it (we can precalculate the 5 nearest neighbors and store them)
