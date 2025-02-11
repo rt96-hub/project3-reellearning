@@ -250,12 +250,22 @@ class ClassDetailScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 24),
 
-                // Join/Leave and Show Feed Buttons
-                _buildJoinLeaveButton(context, ref, classModel),
-                const SizedBox(height: 8),
-                _buildShowFeedButton(context, ref),
-                const SizedBox(height: 8),
-                _buildBookmarksButton(context, classModel.title),
+                // Buttons section
+                if (classModel.creator.id == ref.watch(currentUserProvider)?.uid) ...[
+                  // Creator buttons
+                  _buildShowFeedButton(context, ref),
+                  const SizedBox(height: 8),
+                  _buildBookmarksButton(context, classModel.title),
+                  const SizedBox(height: 8),
+                  _buildProgressReportButton(context, classModel.title),
+                ] else ...[
+                  // Non-creator buttons
+                  _buildShowFeedButton(context, ref),
+                  const SizedBox(height: 8),
+                  _buildBookmarksButton(context, classModel.title),
+                  const SizedBox(height: 8),
+                  _buildJoinLeaveButton(context, ref, classModel),
+                ],
               ],
             ),
           );
@@ -283,6 +293,22 @@ class ClassDetailScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildProgressReportButton(BuildContext context, String className) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () => context.go(
+          '/classes/$classId/progress',
+        ),
+        icon: const Icon(Icons.bar_chart),
+        label: Text('$className Progress'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.purple,
+        ),
       ),
     );
   }

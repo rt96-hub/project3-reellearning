@@ -172,6 +172,17 @@ class _UserProfileContent extends ConsumerWidget {
         const SizedBox(height: 12),
         ElevatedButton.icon(
           onPressed: () {
+            context.go('/profile/progress');
+          },
+          icon: const Icon(Icons.bar_chart),
+          label: const Text('Progress Report'),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(200, 45),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          onPressed: () {
             context.go('/profile/settings');
           },
           icon: const Icon(Icons.settings),

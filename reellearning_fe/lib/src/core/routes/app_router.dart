@@ -16,6 +16,8 @@ import '../../features/home/presentation/screens/search_screen.dart';
 import '../../features/home/presentation/screens/class_members_screen.dart';
 import '../../features/home/presentation/screens/user_classes_screen.dart';
 import '../../features/home/presentation/screens/settings_screen.dart';
+import '../../features/home/presentation/screens/user_progress_screen.dart';
+import '../../features/home/presentation/screens/class_progress_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_profile_screen.dart';
 import '../../features/onboarding/presentation/screens/interests_screen.dart';
 import '../../features/videos/presentation/screens/video_grid_screen.dart';
@@ -160,6 +162,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                           videoType: 'bookmarks',
                         ),
                       ),
+                      GoRoute(
+                        path: 'progress',
+                        builder: (context, state) => ClassProgressScreen(
+                          classId: state.pathParameters['classId']!,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -206,6 +214,12 @@ final routerProvider = Provider<GoRouter>((ref) {
                           sourceType: 'user',
                           sourceId: authState.value?.uid ?? '',
                           videoType: 'bookmarks',
+                        ),
+                      ),
+                      GoRoute(
+                        path: 'progress',
+                        builder: (context, state) => UserProgressScreen(
+                          userId: authState.value?.uid,
                         ),
                       ),
                     ],
