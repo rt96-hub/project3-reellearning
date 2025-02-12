@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../widgets/progress_report_modal.dart';
+import '../widgets/loading_character_animation.dart';
 import 'user_report_detail_screen.dart';
 
 // Add a provider to manage the loading dots animation
@@ -116,25 +117,22 @@ class _UserProgressScreenState extends ConsumerState<UserProgressScreen> {
                               backgroundColor: Colors.blue,
                               foregroundColor: Colors.white,
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                            child: Stack(
+                              alignment: Alignment.center,
                               children: [
-                                if (!isGenerating) 
-                                  const Icon(Icons.add, color: Colors.white),
-                                if (!isGenerating) 
-                                  const SizedBox(width: 8),
-                                Text(isGenerating ? 'Report in Progress' : 'Generate Report'),
-                                if (isGenerating) ...[
-                                  const SizedBox(width: 8),
-                                  const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                    ),
-                                  ),
-                                ],
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (!isGenerating) 
+                                      const Icon(Icons.add, color: Colors.white),
+                                    if (!isGenerating) 
+                                      const SizedBox(width: 8),
+                                    Text(isGenerating ? 'Report in Progress' : 'Generate Report'),
+                                  ],
+                                ),
+                                if (isGenerating)
+                                  LoadingCharacterAnimation(color: Colors.blue),
                               ],
                             ),
                           ),
