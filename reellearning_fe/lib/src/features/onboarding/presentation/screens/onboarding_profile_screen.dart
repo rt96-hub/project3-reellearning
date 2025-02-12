@@ -16,6 +16,7 @@ class _OnboardingProfileScreenState extends ConsumerState<OnboardingProfileScree
   late TextEditingController _displayNameController;
   late TextEditingController _biographyController;
   bool _isLoading = false;
+  bool _isLoadingUserData = true;
 
   @override
   void initState() {
@@ -33,18 +34,42 @@ class _OnboardingProfileScreenState extends ConsumerState<OnboardingProfileScree
   }
 
   Future<void> _loadUserData() async {
-    final userId = ref.read(currentUserProvider)?.uid;
-    if (userId == null) return;
+    setState(() => _isLoadingUserData = true);
+    
+    try {
+      final userId = ref.read(currentUserProvider)?.uid;
+      if (userId == null) {
+        setState(() => _isLoadingUserData = false);
+        return;
+      }
 
-    final userData = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .get();
+      final userData = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
 
-    if (!userData.exists) return;
+      if (!userData.exists) {
+        setState(() => _isLoadingUserData = false);
+        return;
+      }
 
-    final profile = userData.data()?['profile'] as Map<String, dynamic>? ?? {};
-    _displayNameController.text = profile['displayName'] ?? '';
+      final profile = userData.data()?['profile'] as Map<String, dynamic>? ?? {};
+      _displayNameController.text = profile['displayName'] ?? '';
+      _biographyController.text = profile['biography'] ?? '';
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading profile: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingUserData = false);
+      }
+    }
   }
 
   Future<void> _saveProfile() async {
@@ -89,58 +114,60 @@ class _OnboardingProfileScreenState extends ConsumerState<OnboardingProfileScree
         title: const Text('Complete Your Profile'),
         automaticallyImplyLeading: false,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Welcome! Let\'s set up your profile.',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+      body: _isLoadingUserData
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Welcome! Let\'s set up your profile.',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    TextFormField(
+                      controller: _displayNameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Display Name',
+                        border: OutlineInputBorder(),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Please enter a display name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _biographyController,
+                      decoration: const InputDecoration(
+                        labelText: 'Biography (Optional)',
+                        border: OutlineInputBorder(),
+                        helperText: 'Tell us a bit about yourself',
+                      ),
+                      maxLines: 4,
+                    ),
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: _isLoading ? null : _saveProfile,
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 50),
+                      ),
+                      child: _isLoading
+                          ? const CircularProgressIndicator()
+                          : const Text('Continue'),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 24),
-              TextFormField(
-                controller: _displayNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Display Name',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a display name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _biographyController,
-                decoration: const InputDecoration(
-                  labelText: 'Biography (Optional)',
-                  border: OutlineInputBorder(),
-                  helperText: 'Tell us a bit about yourself',
-                ),
-                maxLines: 4,
-              ),
-              const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _saveProfile,
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size(double.infinity, 50),
-                ),
-                child: _isLoading
-                    ? const CircularProgressIndicator()
-                    : const Text('Continue'),
-              ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }

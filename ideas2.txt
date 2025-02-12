@@ -113,6 +113,13 @@ x script to remove # from all tags
     
 
 
+- quick fix
+    x when logging in for the first time, it brings you to the onboarding page, then immediately logs you out
+    x if you log back in, you have to reload before the name prefills
+    x profile loads twice
+    
+
+
 - eventually
     - push notifications for the daily reports
     - greyed out screen while report is generating, until you tap the screen, apparently the tree isnt reloading until the screen is tapped???

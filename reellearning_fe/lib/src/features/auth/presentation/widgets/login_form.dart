@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:reellearning_fe/src/shared/widgets/custom_button.dart';
 import 'package:reellearning_fe/src/shared/widgets/custom_text_field.dart';
 import 'package:reellearning_fe/src/features/auth/data/services/auth_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginForm extends StatefulWidget {
   const LoginForm({super.key});
@@ -35,8 +36,24 @@ class _LoginFormState extends State<LoginForm> {
           _passwordController.text,
         );
         
-        if (mounted) {
-          context.go('/');
+        if (!mounted) return;
+
+        // Check onboarding status before navigating
+        final userId = _authService.currentUser?.uid;
+        if (userId != null) {
+          final userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userId)
+              .get();
+          
+          if (mounted) {
+            final onboardingCompleted = userDoc.data()?['onboardingCompleted'] as bool? ?? false;
+            if (onboardingCompleted) {
+              context.go('/');
+            } else {
+              context.go('/onboarding/profile');
+            }
+          }
         }
       } catch (e) {
         _showErrorMessage(e.toString());
