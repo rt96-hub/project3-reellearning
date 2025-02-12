@@ -1,12 +1,20 @@
-from firebase_functions import https_fn
+from firebase_functions import https_fn, scheduler_fn
 from firebase_admin import initialize_app, firestore, auth
+import firebase_admin
 from datetime import datetime, timedelta
 import json
 import random
 import numpy as np
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 import os
 from openai import OpenAI
+import requests
+import aiohttp
+import asyncio
+import calendar
+import google.auth
+import google.auth.transport.requests
+import google.oauth2.id_token
 
 def validate_environment():
     """Validate required environment variables are set."""
@@ -870,6 +878,55 @@ def generate_user_report(req: https_fn.Request) -> https_fn.Response:
     if req.method == 'OPTIONS':
         return https_fn.Response('', headers=cors_headers, status=204)
     
+    # Verify authentication
+    auth_header = req.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return https_fn.Response(
+            json.dumps({'error': 'Unauthorized - Invalid token format'}),
+            status=401,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+    
+    # Get token outside try block
+    token = auth_header.split('Bearer ')[1]
+    
+    try:
+        # First try to verify as a Firebase ID token (for app calls)
+        try:
+            decoded_token = auth.verify_id_token(token)
+            user_id = decoded_token['uid']
+        except Exception as firebase_error:
+            # If Firebase verification fails, verify as a Google Cloud token
+            try:
+                import google.auth.transport.requests
+                import google.oauth2.id_token
+                
+                auth_req = google.auth.transport.requests.Request()
+                
+                # Verify the token against Google Cloud
+                decoded_token = google.oauth2.id_token.verify_token(
+                    token,
+                    auth_req,
+                    audience=None  # or your specific function URL
+                )
+                # For internal calls, we'll trust the Cloud Platform
+                user_id = 'service-account'
+            except Exception as cloud_error:
+                return https_fn.Response(
+                    json.dumps({'error': f'Unauthorized - Invalid token. Firebase error: {str(firebase_error)}. Cloud error: {str(cloud_error)}'}),
+                    status=401,
+                    headers=cors_headers,
+                    content_type='application/json'
+                )
+    except Exception as e:
+        return https_fn.Response(
+            json.dumps({'error': f'Authentication error: {str(e)}'}),
+            status=401,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+
     # Validate OpenAI API key is available
     if not os.getenv('OPENAI_API_KEY'):
         return https_fn.Response(
@@ -882,28 +939,6 @@ def generate_user_report(req: https_fn.Request) -> https_fn.Response:
     # Initialize OpenAI client
     client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
     
-    # Verify authentication
-    auth_header = req.headers.get('Authorization', '')
-    if not auth_header.startswith('Bearer '):
-        return https_fn.Response(
-            json.dumps({'error': 'Unauthorized - Invalid token format'}),
-            status=401,
-            headers=cors_headers,
-            content_type='application/json'
-        )
-    
-    try:
-        token = auth_header.split('Bearer ')[1]
-        decoded_token = auth.verify_id_token(token)
-        user_id = decoded_token['uid']
-    except Exception as e:
-        return https_fn.Response(
-            json.dumps({'error': f'Unauthorized - Invalid token: {str(e)}'}),
-            status=401,
-            headers=cors_headers,
-            content_type='application/json'
-        )
-
     try:
         # Parse request body
         request_json = req.get_json()
@@ -994,20 +1029,22 @@ def generate_user_report(req: https_fn.Request) -> https_fn.Response:
             videos_liked = len(videos_liked_docs)
             
             # Get the full video details for liked videos
-            liked_video_refs = [doc.get('videoId') for doc in videos_liked_docs]
             liked_videos = []
-            for video_ref in liked_video_refs:
-                video_doc = video_ref.get()
-                if video_doc.exists:
-                    video_data = video_doc.to_dict()
-                    liked_videos.append({
-                        'id': video_doc.id,
-                        'title': video_data['metadata']['title'],
-                        'description': video_data['metadata']['description'],
-                        'description2': video_data['classification']['explicit']['description'],
-                        'transcript': video_data['metadata'].get('transcript', ''),
-                        'hashtags': video_data['classification']['explicit'].get('hashtags', [])
-                    })
+            for like_doc in videos_liked_docs:
+                like_data = like_doc.to_dict()
+                video_ref = like_data.get('videoId')
+                if video_ref:
+                    video_doc = video_ref.get()
+                    if video_doc.exists:
+                        video_data = video_doc.to_dict()
+                        liked_videos.append({
+                            'id': video_doc.id,
+                            'title': video_data['metadata']['title'],
+                            'description': video_data['metadata']['description'],
+                            'description2': video_data['classification']['explicit']['description'],
+                            'transcript': video_data['metadata'].get('transcript', ''),
+                            'hashtags': video_data['classification']['explicit'].get('hashtags', [])
+                        })
 
             # Get videos bookmarked in time period
             videos_bookmarked_docs = (
@@ -1019,20 +1056,25 @@ def generate_user_report(req: https_fn.Request) -> https_fn.Response:
             videos_bookmarked = len(videos_bookmarked_docs)
             
             # Get the full video details for bookmarked videos
-            bookmarked_video_refs = [doc.get('videoId') for doc in videos_bookmarked_docs]
             bookmarked_videos = []
-            for video_ref in bookmarked_video_refs:
-                video_doc = video_ref.get()
-                if video_doc.exists:
-                    video_data = video_doc.to_dict()
-                    bookmarked_videos.append({
-                        'id': video_doc.id,
-                        'title': video_data['metadata']['title'],
-                        'description': video_data['metadata']['description'],
-                        'description2': video_data['classification']['explicit']['description'],
-                        'transcript': video_data['metadata'].get('transcript', ''),
-                        'hashtags': video_data['classification']['explicit'].get('hashtags', [])
-                    })
+            for bookmark_doc in videos_bookmarked_docs:
+                bookmark_data = bookmark_doc.to_dict()
+                video_ref = bookmark_data.get('videoId')
+                if video_ref:
+                    video_doc = video_ref.get()
+                    if video_doc.exists:
+                        video_data = video_doc.to_dict()
+                        bookmarked_videos.append({
+                            'id': video_doc.id,
+                            'title': video_data['metadata']['title'],
+                            'description': video_data['metadata']['description'],
+                            'description2': video_data['classification']['explicit']['description'],
+                            'transcript': video_data['metadata'].get('transcript', ''),
+                            'hashtags': video_data['classification']['explicit'].get('hashtags', []),
+                            'addedAt': bookmark_data.get('addedAt').isoformat(),
+                            'addedBy': bookmark_data.get('userId').path if bookmark_data.get('userId') else None,
+                            'notes': bookmark_data.get('notes', '')
+                        })
 
             # Query classes created in time period
             classes_created_docs = (
@@ -1159,8 +1201,8 @@ def user_report_llm_response(client: OpenAI, report_details: Dict, report_type: 
     
     # Get the appropriate time period message based on report type
     time_period_msg = {
-        'daily': "Here's your daily learning recap! Let's look at what you've accomplished today.",
-        'weekly': "Here's your weekly activity summary! Let's review what you've achieved this week.",
+        'daily': "Here's your daily learning recap! Let's look at what you've accomplished yesterday.",
+        'weekly': "Here's your weekly activity summary! Let's review what you've achieved last week.",
         'monthly': "Your month in review! Let's explore your learning journey over the past month.",
         'yearly': "Your year in review! Let's celebrate your learning achievements over the past year.",
         'custom': "Here's your learning progress report for this period."
@@ -1233,6 +1275,55 @@ def generate_class_report(req: https_fn.Request) -> https_fn.Response:
     if req.method == 'OPTIONS':
         return https_fn.Response('', headers=cors_headers, status=204)
     
+    # Verify authentication
+    auth_header = req.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return https_fn.Response(
+            json.dumps({'error': 'Unauthorized - Invalid token format'}),
+            status=401,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+    
+    # Get token outside try block
+    token = auth_header.split('Bearer ')[1]
+    
+    try:
+        # First try to verify as a Firebase ID token (for app calls)
+        try:
+            decoded_token = auth.verify_id_token(token)
+            user_id = decoded_token['uid']
+        except Exception as firebase_error:
+            # If Firebase verification fails, verify as a Google Cloud token
+            try:
+                import google.auth.transport.requests
+                import google.oauth2.id_token
+                
+                auth_req = google.auth.transport.requests.Request()
+                
+                # Verify the token against Google Cloud
+                decoded_token = google.oauth2.id_token.verify_token(
+                    token,
+                    auth_req,
+                    audience=None  # or your specific function URL
+                )
+                # For internal calls, we'll trust the Cloud Platform
+                user_id = 'service-account'
+            except Exception as cloud_error:
+                return https_fn.Response(
+                    json.dumps({'error': f'Unauthorized - Invalid token. Firebase error: {str(firebase_error)}. Cloud error: {str(cloud_error)}'}),
+                    status=401,
+                    headers=cors_headers,
+                    content_type='application/json'
+                )
+    except Exception as e:
+        return https_fn.Response(
+            json.dumps({'error': f'Authentication error: {str(e)}'}),
+            status=401,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+
     # Validate OpenAI API key is available
     if not os.getenv('OPENAI_API_KEY'):
         return https_fn.Response(
@@ -1245,27 +1336,7 @@ def generate_class_report(req: https_fn.Request) -> https_fn.Response:
     # Initialize OpenAI client
     client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
     
-    # Verify authentication
-    auth_header = req.headers.get('Authorization', '')
-    if not auth_header.startswith('Bearer '):
-        return https_fn.Response(
-            json.dumps({'error': 'Unauthorized - Invalid token format'}),
-            status=401,
-            headers=cors_headers,
-            content_type='application/json'
-        )
-    
-    try:
-        token = auth_header.split('Bearer ')[1]
-        decoded_token = auth.verify_id_token(token)
-        user_id = decoded_token['uid']
-    except Exception as e:
-        return https_fn.Response(
-            json.dumps({'error': f'Unauthorized - Invalid token: {str(e)}'}),
-            status=401,
-            headers=cors_headers,
-            content_type='application/json'
-        )
+    # Rest of your existing code...
 
     try:
         # Parse request body
@@ -1498,8 +1569,8 @@ def class_report_llm_response(client: OpenAI, report_details: Dict, report_type:
     
     # Get the appropriate time period message based on report type
     time_period_msg = {
-        'daily': "Here's your class's daily activity recap! Let's look at what your members accomplished today.",
-        'weekly': "Here's your class's weekly summary! Let's review what your members achieved this week.",
+        'daily': "Here's your class's daily activity recap! Let's look at what your members accomplished yesterday.",
+        'weekly': "Here's your class's weekly summary! Let's review what your members achieved last week.",
         'monthly': "Your class's month in review! Let's explore your class's learning journey over the past month.",
         'yearly': "Your class's year in review! Let's celebrate your class's achievements over the past year.",
         'custom': "Here's your class's progress report for this period."
@@ -1576,3 +1647,318 @@ Keep the response personal, encouraging, and actionable. Focus on the class's pr
         
     except Exception as e:
         return "Error generating report analysis. Please try again later.", 0.0
+
+def get_report_types_and_dates() -> Tuple[str, datetime, datetime]:
+    """Determine which report type to generate based on current date.
+    Returns a tuple of (report_type, start_date, end_date).
+    
+    Priority order:
+    1. Yearly (January 1st)
+    2. Monthly (1st of any month)
+    3. Weekly (Mondays)
+    4. Daily (default)
+    """
+    now = datetime.now()
+    
+    # Check if it's first day of the year
+    if now.month == 1 and now.day == 1:
+        yearly_end = now
+        yearly_start = datetime(now.year - 1, 1, 1)
+        return ('yearly', yearly_start, yearly_end)
+    
+    # Check if it's first of the month
+    if now.day == 1:
+        # Get first day of previous month
+        if now.month == 1:
+            monthly_start = datetime(now.year - 1, 12, 1)
+        else:
+            monthly_start = datetime(now.year, now.month - 1, 1)
+        monthly_end = now
+        return ('monthly', monthly_start, monthly_end)
+    
+    # Check if it's Monday
+    if now.weekday() == 0:
+        weekly_end = now
+        weekly_start = weekly_end - timedelta(days=7)
+        return ('weekly', weekly_start, weekly_end)
+    
+    # Default to daily report
+    daily_end = now
+    daily_start = daily_end - timedelta(days=1)
+    return ('daily', daily_start, daily_end)
+
+async def trigger_user_report(session: aiohttp.ClientSession, function_url_base: str, user_doc: Any, report_type: str, start_time: datetime, end_time: datetime, auth_header: Dict[str, str]) -> None:
+    """Trigger report generation for a single user."""
+    try:
+        # Prepare request data
+        user_data = {
+            'id': user_doc.id,
+            'startTime': start_time.isoformat(),
+            'endTime': end_time.isoformat(),
+            'type': report_type
+        }
+        
+        # Call the user report generation endpoint
+        async with session.post(
+            f"{function_url_base}/generate_user_report",
+            json=user_data,
+            headers=auth_header
+        ) as response:
+            if not response.ok:
+                response_text = await response.text()
+                print(f"Error generating {report_type} report for user {user_doc.id}: {response_text}")
+            
+    except Exception as e:
+        print(f"Error triggering {report_type} report for user {user_doc.id}: {str(e)}")
+
+async def trigger_class_report(session: aiohttp.ClientSession, function_url_base: str, class_doc: Any, report_type: str, start_time: datetime, end_time: datetime, auth_header: Dict[str, str]) -> None:
+    """Trigger report generation for a single class."""
+    try:
+        # Prepare request data
+        class_data = {
+            'id': class_doc.id,
+            'startTime': start_time.isoformat(),
+            'endTime': end_time.isoformat(),
+            'type': report_type
+        }
+        
+        # Call the class report generation endpoint
+        async with session.post(
+            f"{function_url_base}/generate_class_report",
+            json=class_data,
+            headers=auth_header
+        ) as response:
+            if not response.ok:
+                response_text = await response.text()
+                print(f"Error generating {report_type} report for class {class_doc.id}: {response_text}")
+            
+    except Exception as e:
+        print(f"Error triggering {report_type} report for class {class_doc.id}: {str(e)}")
+
+# run at 430 pm every day
+@scheduler_fn.on_schedule(schedule="30 16 * * *")
+def trigger_daily_reports(event: scheduler_fn.ScheduledEvent) -> None:
+    """Trigger report generation for all active users and classes at 9am."""
+    return _trigger_reports()
+
+@https_fn.on_request()
+def trigger_reports_manually(req: https_fn.Request) -> https_fn.Response:
+    """HTTP endpoint to manually trigger report generation.
+    This endpoint is restricted to admin users only."""
+    
+    # Set CORS headers for all responses
+    cors_headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '3600',
+    }
+    
+    # Handle OPTIONS request (preflight)
+    if req.method == 'OPTIONS':
+        return https_fn.Response('', headers=cors_headers, status=204)
+    
+    # Verify authentication
+    auth_header = req.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return https_fn.Response(
+            json.dumps({'error': 'Unauthorized - Invalid token format'}),
+            status=401,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+    
+    try:
+        # Verify the token and get user info
+        token = auth_header.split('Bearer ')[1]
+        decoded_token = auth.verify_id_token(token)
+        user_id = decoded_token['uid']
+        
+        # Get user's admin status from Firestore
+        db = firestore.client()
+        user_doc = db.collection('users').document(user_id).get()
+        
+        if not user_doc.exists:
+            return https_fn.Response(
+                json.dumps({'error': 'User not found'}),
+                status=404,
+                headers=cors_headers,
+                content_type='application/json'
+            )
+        
+        user_data = user_doc.to_dict()
+        is_admin = user_data.get('isAdmin', False)
+        
+        if not is_admin:
+            return https_fn.Response(
+                json.dumps({'error': 'Unauthorized - Admin access required'}),
+                status=403,
+                headers=cors_headers,
+                content_type='application/json'
+            )
+        
+    except Exception as e:
+        return https_fn.Response(
+            json.dumps({'error': f'Authentication error: {str(e)}'}),
+            status=401,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+    
+    try:
+        # Log the manual trigger event
+        db.collection('adminLogs').add({
+            'event': 'manual_report_trigger',
+            'triggeredBy': user_id,
+            'timestamp': datetime.now()
+        })
+        
+        _trigger_reports()
+        return https_fn.Response(
+            json.dumps({
+                'success': True,
+                'message': 'Report generation triggered successfully',
+                'triggeredBy': user_id
+            }),
+            headers=cors_headers,
+            content_type='application/json'
+        )
+    except Exception as e:
+        return https_fn.Response(
+            json.dumps({'error': f'Error triggering reports: {str(e)}'}),
+            status=500,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+
+def _trigger_reports() -> None:
+    """Internal function containing the report generation logic.
+    This is shared between the scheduled and manual triggers."""
+    try:
+        # Initialize Firestore
+        db = firestore.client()
+        
+        # Get the function URL base from environment
+        function_url_base = os.getenv('FUNCTION_URL_BASE')
+        if not function_url_base:
+            raise ValueError("FUNCTION_URL_BASE environment variable not set")
+        
+        # Create a custom token for internal service-to-service calls
+        try:
+            # Get app instance
+            app = firebase_admin.get_app()
+            
+            # Create a custom token for internal service account
+            custom_token = auth.create_custom_token('service-account')
+            
+            # Exchange custom token for ID token using Firebase Auth REST API
+            firebase_api_key = os.getenv('PYTHON_FIREBASE_API_KEY')
+            if not firebase_api_key:
+                raise ValueError("FIREBASE_API_KEY environment variable not set")
+                
+            exchange_url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key={firebase_api_key}"
+            
+            # Make the token exchange request
+            response = requests.post(
+                exchange_url,
+                json={'token': custom_token.decode(), 'returnSecureToken': True}
+            )
+            
+            if not response.ok:
+                raise Exception(f"Failed to exchange custom token: {response.text}")
+                
+            # Extract the ID token from the response
+            id_token = response.json()['idToken']
+            auth_header = {'Authorization': f'Bearer {id_token}'}
+            
+        except Exception as e:
+            print(f"Error creating auth token: {str(e)}")
+            raise e
+        
+        # Get report type and date range
+        report_type, start_time, end_time = get_report_types_and_dates()
+        
+        # Get unique users who have viewed videos in the time period
+        active_user_refs = set()
+        user_views = (
+            db.collection('userViews')
+            .where('watchedAt', '>=', start_time)
+            .where('watchedAt', '<=', end_time)
+            .get()
+        )
+        for view in user_views:
+            view_data = view.to_dict()
+            if 'userId' in view_data:
+                active_user_refs.add(view_data['userId'])
+        
+        # Get the actual user documents
+        active_users = [ref.get() for ref in active_user_refs if ref.get().exists]
+        
+        # Get unique classes that have likes or bookmarks in the time period
+        active_class_refs = set()
+        
+        # Check userLikes for class activity
+        class_likes = (
+            db.collection('userLikes')
+            .where('likedAt', '>=', start_time)
+            .where('likedAt', '<=', end_time)
+            .get()
+        )
+        for like in class_likes:
+            like_data = like.to_dict()
+            if 'classId' in like_data:
+                # classId is an array in userLikes
+                for class_ref in like_data['classId']:
+                    active_class_refs.add(class_ref)
+        
+        # Check userBookmarks for class activity
+        class_bookmarks = (
+            db.collection('userBookmarks')
+            .where('addedAt', '>=', start_time)
+            .where('addedAt', '<=', end_time)
+            .get()
+        )
+        for bookmark in class_bookmarks:
+            bookmark_data = bookmark.to_dict()
+            if 'classId' in bookmark_data:
+                # classId is an array in userBookmarks
+                for class_ref in bookmark_data['classId']:
+                    active_class_refs.add(class_ref)
+        
+        # Get the actual class documents
+        active_classes = [ref.get() for ref in active_class_refs if ref.get().exists]
+        
+        async def main():
+            # Create a shared session for all requests
+            async with aiohttp.ClientSession() as session:
+                tasks = []
+                
+                # Add user report tasks
+                user_tasks = [
+                    trigger_user_report(
+                        session, function_url_base, user_doc, 
+                        report_type, start_time, end_time, auth_header
+                    )
+                    for user_doc in active_users
+                ]
+                tasks.extend(user_tasks)
+                
+                # Add class report tasks
+                class_tasks = [
+                    trigger_class_report(
+                        session, function_url_base, class_doc,
+                        report_type, start_time, end_time, auth_header
+                    )
+                    for class_doc in active_classes
+                ]
+                tasks.extend(class_tasks)
+                
+                # Run all tasks concurrently
+                await asyncio.gather(*tasks)
+        
+        # Run the async tasks
+        asyncio.run(main())
+                
+    except Exception as e:
+        print(f"Error in trigger_daily_reports: {str(e)}")
+        raise e

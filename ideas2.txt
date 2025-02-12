@@ -47,46 +47,44 @@ x script to remove # from all tags
     x add similar onboarding when you create a class
         x maybe with a search?
     - ai generated progress report(what have you done over the last x days)
-        - userProgressReport collection, progress report page
+        x userProgressReport collection, progress report page
             x list of historical reports
             x generate new report button, last x days, weeks, hours, months, years
             x need to make the firestore rules allow for reading (creation is handled on the endpoint)
-            - how to leave the modal before the report is finished, send a message when its done
-                - really need to figure this out
+            x how to leave the modal before the report is finished, send a message when its done
+                x really need to figure this out
                 x make the purple color button less dark (changed text to white)
                 x remove the timestamp from report page
                 x classes table needs to be sized better, flex width (or list similar to the reports)
                 x remove logging stuff 
-                - blue math characters cycle left and right across the button
-            - if still on the page, does it open you to the report detail page? Can we load it and let it stream the results?
-                - on the first opened page, it shows all the actual firebase data
-                - the report document is created sans body, the result is streamed to the page
-                - once the streaming is done, the body is updated with the result?
-            - build out report detail function
+                x blue math characters cycle left and right across the button
+            x build out report detail function
                 x properly query the data
                     x can I test locally with python?
                     x dont store the entire video data, maybe for the videos watched, we only store the time watched and the video title? or at least compare speed (or no actual video data at all, just the count of videos watched)
                 x connect to openai to feed summary info
                     x how to set enviroment variables?
-        - do one time generate report function first, then set up scheduled job to call those functions
+        x do one time generate report function first, then set up scheduled job to call those functions
         - every day, send a push notification? And you can look at a summary of the day? at 9 am of the next day
-        - "your mm/dd/yyyy summary"
-        - how to schedule a job?? and then I need to figure out how to kick it off manually, and maybe shorten the duration we are checking
-        - schedule job that runs, pulls records, then sends the data to kick off other functions that generate reports parallel
-        - look at (cloud function that pulls the below data from firestore, then runs it through an llm):
-            - classes made
-            - videos watched
-            - videos liked
-            - videos bookmarked
-            - comments
-            - replies/likes to your comments
-            - understanding entries
-    - ai generated class report for curators (what have the students been liking/comprehending)
-        - classProgressReport collection
-        - probably lives in the class page, maybe generated on a schedule still?
+            x checks the day of week/month/year, then generates the report with 'daily', 'weekly', 'monthly', 'yearly' and appropriate start and end dates
+            x "your mm/dd/yyyy summary"
+            - how to schedule a job?? and then I need to figure out how to kick it off manually, and maybe shorten the duration we are checking
+            x pulls user/class records, then sends the data to kick off other functions that generate reports parallel
+        x look at (cloud function that pulls the below data from firestore, then runs it through an llm):
+            x classes made
+            x videos watched
+            x videos liked
+            x videos bookmarked
+            x comments
+            x replies/likes to your comments
+            x understanding entries
+    x ai generated class report for curators (what have the students been liking/comprehending)
+        x classProgressReport collection
+        x probably lives in the class page, maybe generated on a schedule still?
     - ai generated suggested reading or videos based on what the user has watched, maybe in the same tab as the progress report
         - or based on class
-        - part of the progress report?
+        - probably too general to be a daily report, and not something that needs to be recalced every time another video is liked
+        - part of the progress report? too often? Maybe an attribute on the class, that get's run daily
         - agent or simple llm that somehow summarizes activity, and then uses the summary to query the web for relevant videos/articles/etc.
         - need to find a service that can easily query the web for relevant videos/books/articles
     - ai generated questions randomly in the feed, based on last x videos watched (depends on subject)
@@ -103,6 +101,8 @@ x script to remove # from all tags
 
 
 - eventually
+    - push notifications for the daily reports
+    - greyed out screen while report is generating, until you tap the screen, apparently the tree isnt reloading until the screen is tapped???
     - search
     - dms
     - notifications

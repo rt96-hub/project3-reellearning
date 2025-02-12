@@ -12,11 +12,12 @@ from typing import Any, Dict
 load_dotenv()
 
 # Test configuration
-TEST_USER_ID = "1kkE3MKyyTTYFra4H0lkqjSUPHx2"  # Replace with an actual user ID from your database
+TEST_USER_ID = "vW6IrrAEe7O7MuUs2m3Wct1CJZu1"  # Replace with an actual user ID from your database
+TEST_USER_ID2 = "1kkE3MKyyTTYFra4H0lkqjSUPHx2"  # Replace with an actual user ID from your database
 TEST_CLASS_ID = "bcBdtl9X26TPNlUabqlV"  # Replace with an actual class ID from your database
 
 # Use UTC timestamps
-START_TIME = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+START_TIME = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
 END_TIME = datetime.now(timezone.utc).isoformat()
 
 # Initialize OpenAI client
@@ -94,12 +95,14 @@ def generate_user_report(user_id: str, start_time: str, end_time: str, report_ty
             videos_liked = len(videos_liked_docs)
             
             # Get the full video details for liked videos
-            liked_video_refs = [doc.get('videoId') for doc in videos_liked_docs]
             liked_videos = []
-            for video_ref in liked_video_refs:
+            print(f"\nProcessing {len(videos_liked_docs)} liked videos:")
+            for video_ref in videos_liked_docs:
+                print(f"Processing video ref: {video_ref}")
                 video_doc = video_ref.get()
                 if video_doc.exists:
                     video_data = video_doc.to_dict()
+                    print(f"Video data: {json.dumps(video_data.get('metadata', {}), indent=2)}")
                     liked_videos.append({
                         'id': video_doc.id,
                         'title': video_data['metadata']['title'],
@@ -108,6 +111,8 @@ def generate_user_report(user_id: str, start_time: str, end_time: str, report_ty
                         'transcript': video_data['metadata'].get('transcript', ''),
                         'hashtags': video_data['classification']['explicit'].get('hashtags', [])
                     })
+                else:
+                    print(f"Warning: Video document does not exist")
 
             # Get videos bookmarked in time period
             videos_bookmarked_docs = (
@@ -119,9 +124,8 @@ def generate_user_report(user_id: str, start_time: str, end_time: str, report_ty
             videos_bookmarked = len(videos_bookmarked_docs)
             
             # Get the full video details for bookmarked videos
-            bookmarked_video_refs = [doc.get('videoId') for doc in videos_bookmarked_docs]
             bookmarked_videos = []
-            for video_ref in bookmarked_video_refs:
+            for video_ref in videos_bookmarked_docs:
                 video_doc = video_ref.get()
                 if video_doc.exists:
                     video_data = video_doc.to_dict()
@@ -629,10 +633,15 @@ def main():
     user_result = generate_user_report(TEST_USER_ID, start_time, end_time)
     print(f"User Report Result: {json.dumps(user_result, indent=2)}")
     
-    print("\nTesting Class Report Generation:")
+    print("\nTesting User 2 Report Generation:")
     print("-" * 30)
-    class_result = generate_class_report(TEST_CLASS_ID, start_time, end_time)
-    print(f"Class Report Result: {json.dumps(class_result, indent=2)}")
+    user_result = generate_user_report(TEST_USER_ID2, start_time, end_time)
+    print(f"User Report Result: {json.dumps(user_result, indent=2)}")
+
+    # print("\nTesting Class Report Generation:")
+    # print("-" * 30)
+    # class_result = generate_class_report(TEST_CLASS_ID, start_time, end_time)
+    # print(f"Class Report Result: {json.dumps(class_result, indent=2)}")
 
 if __name__ == "__main__":
     main() 

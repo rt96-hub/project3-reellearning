@@ -8,6 +8,13 @@
   },
   "functions": {
     "source": "functions",
-    "runtime": "python311"
+    "runtime": "python311",
+    "codebase": "default",
+    "ignore": [
+      "venv",
+      ".git",
+      "firebase-debug.log",
+      "firebase-debug.*.log"
+    ]
   }
 }
