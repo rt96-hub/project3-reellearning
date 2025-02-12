@@ -1,7 +1,7 @@
 from firebase_functions import https_fn, scheduler_fn
 from firebase_admin import initialize_app, firestore, auth
 import firebase_admin
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import random
 import numpy as np
@@ -15,6 +15,7 @@ import calendar
 import google.auth
 import google.auth.transport.requests
 import google.oauth2.id_token
+import random
 
 def validate_environment():
     """Validate required environment variables are set."""
@@ -1735,8 +1736,8 @@ async def trigger_class_report(session: aiohttp.ClientSession, function_url_base
     except Exception as e:
         print(f"Error triggering {report_type} report for class {class_doc.id}: {str(e)}")
 
-# run at 430 pm every day
-@scheduler_fn.on_schedule(schedule="30 16 * * *")
+
+@scheduler_fn.on_schedule(schedule="0 15 * * *")
 def trigger_daily_reports(event: scheduler_fn.ScheduledEvent) -> None:
     """Trigger report generation for all active users and classes at 9am."""
     return _trigger_reports()
@@ -1962,3 +1963,126 @@ def _trigger_reports() -> None:
     except Exception as e:
         print(f"Error in trigger_daily_reports: {str(e)}")
         raise e
+
+@https_fn.on_request()
+def generate_in_feed_question(req: https_fn.Request) -> https_fn.Response:
+    """Generate a multiple choice question based on recently watched videos."""
+    # Set CORS headers for all responses
+    cors_headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '3600',
+    }
+    
+    # Handle OPTIONS request (preflight)
+    if req.method == 'OPTIONS':
+        return https_fn.Response('', headers=cors_headers, status=204)
+    
+    # Verify authentication
+    auth_header = req.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return https_fn.Response(
+            json.dumps({'error': 'Unauthorized - Invalid token format'}),
+            status=401,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+    
+    try:
+        # Verify the token
+        token = auth_header.split('Bearer ')[1]
+        decoded_token = auth.verify_id_token(token)
+        user_id = decoded_token['uid']
+    except Exception as e:
+        return https_fn.Response(
+            json.dumps({'error': f'Authentication error: {str(e)}'}),
+            status=401,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+    
+    try:
+        # Parse request body
+        request_json = req.get_json()
+        video_ids = request_json.get('videoIds', [])
+        
+        if not video_ids:
+            return https_fn.Response(
+                json.dumps({'error': 'No video IDs provided'}),
+                status=400,
+                headers=cors_headers,
+                content_type='application/json'
+            )
+
+        # Initialize Firestore
+        db = firestore.client()
+        
+        # Create question document in Firestore with test data
+        user_ref = db.collection('users').document(user_id)
+        question_ref = db.collection('questions').document()
+        
+        # get the video details
+        # TODO select 1 random video from the list of video ids
+        index = random.randint(0, len(video_ids) - 1)
+        video_id = video_ids[index]
+        # TODO get the video details
+        video_doc = db.collection('videos').document(video_id).get()
+        video_details = video_doc.to_dict()
+
+
+        # Generate the question from openai
+        # TODO generate the question
+
+        # Store the question in Firestore
+        # make sure only the 1 video is selected
+        question_doc = {
+            'userId': user_ref,
+            'data': {
+                # return the video id as a document reference
+                'videoId': f'videos/{video_id}',
+                'questionText': "Based on the last videos, what is the main concept you learned?",
+                'options': ["Option A", "Option B", "Option C"],
+                'correctAnswer': 1,
+                'explanation': "Option A is correct because it relates to the core concept presented."
+            },
+            'createdAt': datetime.now(timezone.utc),
+            'updatedAt': datetime.now(timezone.utc)
+        }
+        
+        # Store the question in Firestore
+        question_ref.set(question_doc)
+        
+        # Create a JSON-safe version of the response
+        response_data = {
+            'status': 'success',
+            'questionId': question_ref.id,
+            'question': {
+                'videoId': f'videos/{video_id}',
+                'questionText': question_doc['data']['questionText'],
+                'options': question_doc['data']['options'],
+                'correctAnswer': question_doc['data']['correctAnswer'],
+                'explanation': question_doc['data']['explanation']
+            }
+        }
+        
+        # Return the question data
+        return https_fn.Response(
+            json.dumps(response_data),
+            headers=cors_headers,
+            content_type='application/json'
+        )
+
+    except Exception as e:
+        return https_fn.Response(
+            json.dumps({'error': f'Error generating question: {str(e)}'}),
+            status=500,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+
+def generate_question_from_videos(client: OpenAI, video_details: List[Dict]) -> Dict:
+    """Generate a multiple choice question based on video content using OpenAI."""
+    # we will use the openai api to generate the question using response format
+    # right now we are using test data
+    return None

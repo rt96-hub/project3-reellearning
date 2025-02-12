@@ -182,6 +182,20 @@ service cloud.firestore {
         request.resource.data.comprehensionLevel in ['not_understood', 'partially_understood', 'fully_understood'];
     }
 
+    // Questions collection rules
+    match /questions/{questionId} {
+      // Anyone can read questions
+      allow read: if true;
+      
+      // Only allow updating specific fields for user answers
+      allow update: if isAuthenticated() && 
+                   request.resource.data.diff(resource.data).affectedKeys().hasOnly(['userAnswer', 'userIsCorrect', 'answeredAt']) &&
+                   request.resource.data.userId == resource.data.userId;
+      
+      // No client-side creation or deletion
+      allow create, delete: if false;
+    }
+
     // Classes collection rules
     match /classes/{classId} {
       // Helper function to check if user is a curator

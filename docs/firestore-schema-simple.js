@@ -363,3 +363,23 @@ classProgressReports:
   },
   error?: string        // Present only if status is 'error'
 }
+
+
+// question collection
+questions: {
+  questionId: {
+    userId: Reference,
+    data: {
+      videoId: Reference,
+      questionText: String,
+      options: Array<string>,
+      correctAnswer: number,
+      explanation: string,
+    }
+    userAnswer: number,
+    userIsCorrect: boolean,
+    answeredAt: Timestamp,
+    createdAt: Timestamp,
+    updatedAt: Timestamp
+  }
+}

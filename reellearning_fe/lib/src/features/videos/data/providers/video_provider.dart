@@ -7,6 +7,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../models/video_model.dart';
 import './video_state_provider.dart';
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
+import 'package:reellearning_fe/src/features/questions/models/question_model.dart';
 
 final videoProvider = StreamProvider.autoDispose((ref) {
   return FirebaseFirestore.instance
@@ -90,7 +92,42 @@ Future<String> getVideoUrl(String videoPath) async {
 // Provider to track current channel ID (null means personal feed)
 final currentChannelIdProvider = StateProvider<String?>((ref) => null);
 
-class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
+// Create a union type for feed items
+abstract class FeedItem {
+  String get id;
+  DateTime get createdAt;
+}
+
+// Make VideoModel implement FeedItem
+class VideoFeedItem implements FeedItem {
+  final VideoModel video;
+  VideoFeedItem(this.video);
+
+  @override
+  String get id => video.id;
+
+  @override
+  DateTime get createdAt => video.uploadedAt;
+
+  // Forward common video properties
+  DocumentReference get creator => video.creator;
+  String get title => video.title;
+  String get description => video.description;
+}
+
+// Make QuestionModel implement FeedItem
+class QuestionFeedItem implements FeedItem {
+  final QuestionModel question;
+  QuestionFeedItem(this.question);
+
+  @override
+  String get id => question.id;
+
+  @override
+  DateTime get createdAt => question.createdAt;
+}
+
+class PaginatedVideoNotifier extends StateNotifier<List<FeedItem>> {
   PaginatedVideoNotifier(this.ref) : super([]) {
     _fetchNextBatch();
   }
@@ -98,11 +135,27 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
   final Ref ref;
   bool _isLoading = false;
   final int _batchSize = 10;
-  static const int _maxQueueSize = 50;  // Maximum number of videos to keep in queue
-  bool _isAdjustingIndex = false;  // Flag to prevent index update loops
+  static const int _maxQueueSize = 50;
+  bool _isAdjustingIndex = false;
   
-  // Public getter for index adjustment state
   bool get isAdjustingIndex => _isAdjustingIndex;
+
+  // Method to insert a question into the feed
+  void insertQuestion(QuestionModel question, int currentIndex) {
+    debugPrint('[PaginatedVideoNotifier] Current index: $currentIndex, Feed length: ${state.length}');
+    
+    if (currentIndex + 2 >= state.length) {
+      // If we're too close to the end, just append it
+      state = [...state, QuestionFeedItem(question)];
+      debugPrint('[PaginatedVideoNotifier] Appended question to end of feed');
+    } else {
+      // Replace the video 2 items ahead with the question
+      final newState = List<FeedItem>.from(state);
+      newState[currentIndex + 2] = QuestionFeedItem(question);
+      state = newState;
+      debugPrint('[PaginatedVideoNotifier] Replaced item at index ${currentIndex + 2} with question');
+    }
+  }
 
   // TODO: Move this to a configuration file
   static const String _functionUrl = 'https://us-central1-reellearning-prj3.cloudfunctions.net/get_videos';
@@ -238,7 +291,7 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
           print('[PaginatedVideoNotifier] Adjusting index from $currentIndex to $newIndex');
           
           // Update state first
-          state = [...state.sublist(_batchSize), ...resolvedVideos];
+          state = [...state.sublist(_batchSize), ...resolvedVideos.map((v) => VideoFeedItem(v))];
           
           // Set flag to prevent index updates from page controller
           _isAdjustingIndex = true;
@@ -256,7 +309,7 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
           });
         } else {
           print('[PaginatedVideoNotifier] Adding videos to queue (current size: ${state.length})');
-          state = [...state, ...resolvedVideos];
+          state = [...state, ...resolvedVideos.map((v) => VideoFeedItem(v))];
         }
         print('[PaginatedVideoNotifier] New queue size: ${state.length}');
       } else {
@@ -301,6 +354,6 @@ class PaginatedVideoNotifier extends StateNotifier<List<VideoModel>> {
 // Provider to force page jumps
 final forcePageJumpProvider = StateProvider<int?>((ref) => null);
 
-final paginatedVideoProvider = StateNotifierProvider<PaginatedVideoNotifier, List<VideoModel>>(
+final paginatedVideoProvider = StateNotifierProvider<PaginatedVideoNotifier, List<FeedItem>>(
   (ref) => PaginatedVideoNotifier(ref),
 ); 

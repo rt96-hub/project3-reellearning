@@ -13,6 +13,7 @@ class VideoPlayerWidget extends ConsumerStatefulWidget {
   final ValueChanged<bool> onMuteChanged;
   final String userId;
   final String? classId;
+  final Function(String)? onVideoWatched;
 
   const VideoPlayerWidget({
     Key? key,
@@ -23,6 +24,7 @@ class VideoPlayerWidget extends ConsumerStatefulWidget {
     required this.onMuteChanged,
     required this.userId,
     this.classId,
+    this.onVideoWatched,
   }) : super(key: key);
 
   @override
@@ -104,11 +106,13 @@ class _VideoPlayerWidgetState extends ConsumerState<VideoPlayerWidget> {
     final position = _controller!.value.position;
     final progress = position.inMilliseconds / duration.inMilliseconds;
     
-    // Record view when 1% of video is watched and it's actively playing
-    if (progress >= 0.01 && !_hasRecordedView && _isActivelyPlaying) {
-      debugPrint('Video reached 1% completion. Progress: ${(progress * 100).toStringAsFixed(1)}%');
+    // Record view when 80% of video is watched and it's actively playing
+    if (progress >= 0.8 && !_hasRecordedView && _isActivelyPlaying) {
+      debugPrint('Video reached 80% completion. Progress: ${(progress * 100).toStringAsFixed(1)}%');
       debugPrint('Position: ${position.inSeconds}s / Duration: ${duration.inSeconds}s');
       _recordView();
+      // Notify parent that video was watched
+      widget.onVideoWatched?.call(widget.video.id);
     }
   }
 

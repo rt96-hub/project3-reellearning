@@ -88,6 +88,12 @@ x script to remove # from all tags
         - agent or simple llm that somehow summarizes activity, and then uses the summary to query the web for relevant videos/articles/etc.
         - need to find a service that can easily query the web for relevant videos/books/articles
     - ai generated questions randomly in the feed, based on last x videos watched (depends on subject)
+        x make sure videos are only marked as watched after 80% of the video is watched
+        x the condition for questions is either 2 minutes watched, but they have to have watched at least 1 video (set to 30 seconds for testing)
+        - how to make sure this runs async, so we don't have to wait for the ai to generate question while the user is watching videos
+            - it will just insert the question into the feed when it gets a response
+        - we will pick one video from the list of watched videos, and then generate a question about that video
+        - add rules to allow user to modify the question
         - ADD QUESTIONS ANSWERED TO REPORT (NEED to get the questions in first though)
     - ai generated badges or achievements???
         - achievements screen

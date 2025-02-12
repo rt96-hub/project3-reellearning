@@ -6,12 +6,17 @@ import 'package:reellearning_fe/src/features/auth/data/providers/auth_provider.d
 import 'package:reellearning_fe/src/features/videos/data/providers/video_provider.dart';
 import 'package:reellearning_fe/src/features/videos/data/providers/video_state_provider.dart';
 import 'package:reellearning_fe/src/features/videos/presentation/widgets/video_player_widget.dart';
+import 'package:reellearning_fe/src/features/questions/models/question_model.dart';
+import 'package:reellearning_fe/src/features/questions/widgets/question_card.dart';
 import '../widgets/video_action_buttons.dart';
 import '../widgets/video_understanding_buttons.dart';
 import '../widgets/feed_selection_pill.dart';
 import '../../../videos/data/providers/video_controller_provider.dart';
 import '../../../../core/navigation/route_observer.dart';
 import '../../../../features/navigation/providers/tab_state_provider.dart';
+import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -24,6 +29,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   final PageController _pageController = PageController();
   bool _showFullDescription = false;
   bool _isMuted = false;
+  Timer? _questionTimer;  // Add timer for question generation
+  List<String> _recentVideoIds = [];  // Track recent video IDs
 
   @override
   void initState() {
@@ -38,6 +45,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
         ref.read(selectedFeedProvider.notifier).state = 'personal';
         ref.read(paginatedVideoProvider.notifier).refresh();
       }
+    });
+
+    // Initialize question timer
+    _questionTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      _checkAndGenerateQuestion();
     });
   }
 
@@ -55,6 +67,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     AppRouteObservers.rootObserver.unsubscribe(this);
     _pageController.removeListener(_handlePageChange);
     _pageController.dispose();
+    _questionTimer?.cancel();  // Cancel timer on dispose
     super.dispose();
   }
 
@@ -70,36 +83,146 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     ref.read(videoControllerProvider.notifier).resumeIfNeeded();
   }
 
+  // Add method to track video IDs
+  void _updateRecentVideos(String videoId) {
+    final now = DateTime.now();
+    
+    // Only add if not already in the list
+    if (!_recentVideoIds.contains(videoId)) {
+      setState(() {
+        _recentVideoIds.add(videoId);
+        
+        // Keep only videos from last 2 minutes
+        final twoMinutesAgo = now.subtract(const Duration(minutes: 2));
+        _recentVideoIds = _recentVideoIds.where((id) {
+          final watchTime = now;  // For now, just use current time
+          return watchTime.isAfter(twoMinutesAgo);
+        }).toList();
+      });
+      
+      debugPrint('[HomeScreen] Added video $videoId to recent videos. Total: ${_recentVideoIds.length}');
+    }
+  }
+
+  // Add method to check and generate question
+  Future<void> _checkAndGenerateQuestion() async {
+    /**************************************************************************
+     * IN-FEED QUESTION GENERATION LOGIC
+     * 
+     * This method is called periodically (currently every 30 seconds, will be 
+     * changed to 2 minutes in production) to potentially generate a question
+     * based on recently watched videos.
+     * 
+     * Conditions for generating a question:
+     * 1. Must have at least one video in _recentVideoIds
+     * 2. Videos must have been watched to 80% completion (handled by VideoPlayerWidget)
+     * 3. User must be authenticated
+     * 
+     * After a successful request:
+     * - The list of watched videos is cleared to start fresh
+     * - A new question will be inserted into the feed (TODO)
+     * 
+     * Future improvements:
+     * - Increase timer to 2 minutes
+     * - Add minimum number of watched videos requirement
+     * - Add cooldown period between questions
+     * - Add maximum questions per session limit
+     **************************************************************************/
+
+    // Check if we have any watched videos
+    if (_recentVideoIds.isEmpty) {
+      debugPrint('[Question Generation] No watched videos available, skipping question generation');
+      return;
+    }
+
+    try {
+      final userProfile = ref.read(currentUserProvider);
+      if (userProfile == null) {
+        debugPrint('[Question Generation] No authenticated user, skipping question generation');
+        return;
+      }
+
+      final currentIndex = ref.read(currentVideoIndexProvider);
+      debugPrint('[Question Generation] Current video index: $currentIndex');
+      debugPrint('[Question Generation] Generating question for ${_recentVideoIds.length} videos: ${_recentVideoIds.join(", ")}');
+
+      // Get Firebase auth token
+      final token = await userProfile.getIdToken();
+      
+      // Call the question generation endpoint
+      final response = await http.post(
+        Uri.parse('https://us-central1-reellearning-prj3.cloudfunctions.net/generate_in_feed_question'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'videoIds': _recentVideoIds,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final questionData = json.decode(response.body);
+        debugPrint('[Question Generation] Successfully generated question: ${questionData['questionId']}');
+        
+        // Create question model from response
+        final question = QuestionModel.fromJson(questionData);
+        
+        // Insert question into feed
+        ref.read(paginatedVideoProvider.notifier).insertQuestion(
+          question,
+          currentIndex,  // Current index when question was generated
+        );
+        
+        // Clear the list of watched videos after successful request
+        setState(() {
+          _recentVideoIds = [];
+        });
+        debugPrint('[Question Generation] Cleared watched videos list');
+      } else {
+        debugPrint('[Question Generation] Failed to generate question. Status: ${response.statusCode}, Body: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('[Question Generation] Error generating question: $e');
+    }
+  }
+
   void _handlePageChange() {
     if (_pageController.position.pixels == _pageController.position.maxScrollExtent) {
       return;
     }
 
     final newIndex = _pageController.page?.round() ?? 0;
-    final videos = ref.read(paginatedVideoProvider);
+    final items = ref.read(paginatedVideoProvider);
     
-    // Ensure the new index is within bounds and the videos list is not empty
-    if (videos.isNotEmpty && newIndex >= 0 && newIndex < videos.length) {
-      print('[HomeScreen] Updating video index to: $newIndex (total videos: ${videos.length})');
+    // Ensure the new index is within bounds and the feed is not empty
+    if (items.isNotEmpty && newIndex >= 0 && newIndex < items.length) {
+      debugPrint('[HomeScreen] Updating index to: $newIndex (total items: ${items.length})');
+      
+      // Track video ID for question generation only if it's a video item
+      final currentItem = items[newIndex];
+      if (currentItem is VideoFeedItem) {
+        _updateRecentVideos(currentItem.video.id);
+      }
       
       // Only update if we're not in the middle of an index adjustment
       final notifier = ref.read(paginatedVideoProvider.notifier) as PaginatedVideoNotifier;
       if (!notifier.isAdjustingIndex) {
-        // Update the current video index in the provider
+        // Update the current index in the provider
         ref.read(currentVideoIndexProvider.notifier).state = newIndex;
       }
 
-      // Check if we need to load more videos
-      if (videos.length - newIndex <= 4) {
-        print('[HomeScreen] Near end of feed, loading more videos');
+      // Check if we need to load more items
+      if (items.length - newIndex <= 4) {
+        debugPrint('[HomeScreen] Near end of feed, loading more items');
         ref.read(paginatedVideoProvider.notifier).loadMore();
       }
     } else {
-      print('[HomeScreen] Invalid index $newIndex for video list of size ${videos.length}');
+      debugPrint('[HomeScreen] Invalid index $newIndex for feed of size ${items.length}');
       // If the index is invalid, try to recover by jumping to the last valid index
-      if (videos.isNotEmpty) {
-        final lastValidIndex = videos.length - 1;
-        print('[HomeScreen] Recovering by jumping to index $lastValidIndex');
+      if (items.isNotEmpty) {
+        final lastValidIndex = items.length - 1;
+        debugPrint('[HomeScreen] Recovering by jumping to index $lastValidIndex');
         _pageController.jumpToPage(lastValidIndex);
         ref.read(currentVideoIndexProvider.notifier).state = lastValidIndex;
       }
@@ -141,8 +264,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       return const Center(child: CircularProgressIndicator());
     }
 
-    final currentVideo = videos[currentIndex];
-
+    final currentItem = videos[currentIndex];
+    
     return Scaffold(
       backgroundColor: Colors.black,
       body: Stack(
@@ -154,13 +277,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               scrollDirection: Axis.vertical,
               itemCount: videos.length,
               itemBuilder: (context, index) {
-                return VideoPlayerWidget(
-                  video: videos[index],
-                  autoPlay: index == currentIndex,
-                  isMuted: _isMuted,
-                  onMuteChanged: (muted) => setState(() => _isMuted = muted),
-                  userId: userProfile.uid,
-                );
+                final item = videos[index];
+                
+                // Handle different feed item types
+                if (item is VideoFeedItem) {
+                  return VideoPlayerWidget(
+                    video: item.video,
+                    autoPlay: index == currentIndex,
+                    isMuted: _isMuted,
+                    onMuteChanged: (muted) => setState(() => _isMuted = muted),
+                    userId: userProfile.uid,
+                    onVideoWatched: _updateRecentVideos,
+                  );
+                } else if (item is QuestionFeedItem) {
+                  return QuestionCard(
+                    question: item.question,
+                    onAnswer: (selectedAnswer) {
+                      // TODO: Handle answer selection
+                      if (selectedAnswer == item.question.correctAnswer) {
+                        // TODO: Show explanation
+                      }
+                    },
+                  );
+                } else {
+                  return const SizedBox.shrink();  // Fallback
+                }
               },
             ),
 
@@ -168,29 +309,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
           if (userProfile != null)
             Positioned(
               top: MediaQuery.of(context).padding.top + 8,
-              left: MediaQuery.of(context).size.width * 0.18, // 30% from left
-              right: MediaQuery.of(context).size.width * 0.18, // 30% from right
+              left: MediaQuery.of(context).size.width * 0.18,
+              right: MediaQuery.of(context).size.width * 0.18,
               child: FeedSelectionPill(userId: userProfile.uid),
             ),
 
-          // Video Actions (Overlay)
-          if (videos.isNotEmpty)
+          // Video Actions and Info (Only show for video items)
+          if (currentItem is VideoFeedItem) ...[
+            // Video Actions (Overlay)
             Positioned(
               right: 8,
               bottom: 80,
-              child: SizedBox(  // Added SizedBox to constrain width
-                width: 72,     // Specific width for action buttons column
+              child: SizedBox(
+                width: 72,
                 child: VideoActionButtons(
-                  videoId: videos[currentIndex].id,
+                  videoId: currentItem.video.id,
                 ),
               ),
             ),
 
-          // Video Info Overlay
-          if (videos.isNotEmpty)
+            // Video Info Overlay
             Positioned(
               left: 16,
-              right: 88, // Increased space for action buttons
+              right: 88,
               bottom: 120,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,7 +342,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                     children: [
                       // User Avatar
                       StreamBuilder<DocumentSnapshot>(
-                        stream: (videos[currentIndex].creator as DocumentReference).snapshots(),
+                        stream: currentItem.video.creator.snapshots(),
                         builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
                           if (!snapshot.hasData || !snapshot.data!.exists) {
                             return const CircleAvatar(
@@ -242,7 +383,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              videos[currentIndex].title,
+                              currentItem.video.title,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
@@ -252,7 +393,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                             const SizedBox(height: 4),
                             // Creator Name
                             StreamBuilder<DocumentSnapshot>(
-                              stream: (videos[currentIndex].creator as DocumentReference).snapshots(),
+                              stream: currentItem.video.creator.snapshots(),
                               builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
                                 if (!snapshot.hasData || !snapshot.data!.exists) {
                                   return const Text(
@@ -297,7 +438,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                             GestureDetector(
                               onTap: () => setState(() => _showFullDescription = !_showFullDescription),
                               child: Text(
-                                videos[currentIndex].description,
+                                currentItem.video.description,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
@@ -315,16 +456,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               ),
             ),
 
-          // Understanding Buttons (Overlay)
-          if (videos.isNotEmpty && userProfile != null)
+            // Understanding Buttons (Overlay)
             Positioned(
               left: 16,
               right: 16,
               bottom: 16,
               child: VideoUnderstandingButtons(
-                videoId: videos[currentIndex].id,
+                videoId: currentItem.video.id,
               ),
             ),
+          ],
         ],
       ),
     );
