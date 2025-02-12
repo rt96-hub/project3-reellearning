@@ -2056,7 +2056,8 @@ def generate_in_feed_question(req: https_fn.Request) -> https_fn.Response:
                 'questionText': question['questionText'],
                 'options': question['options'],
                 'correctAnswer': question['correctAnswer'],
-                'explanation': question['explanation']
+                'explanation': question['explanation'],
+                'llmDuration': question['llmDuration']  # Add the timing information
             },
             'createdAt': datetime.now(timezone.utc),
             'updatedAt': datetime.now(timezone.utc)
@@ -2106,7 +2107,10 @@ def generate_question_from_video(client: OpenAI, video_details: Dict) -> dict:
             - questionText: str
             - options: List[str]
             - explanation: str
+            - llmDuration: float (time taken for LLM response)
     """
+    start_time = datetime.now(timezone.utc)
+    
     prompt = f"""Based on the following video content, generate an educational question that tests the viewer's understanding.
     
 Video Title: {video_details['title']}
@@ -2133,6 +2137,9 @@ Generate a multiple-choice question that:
             response_format=QuestionResponse
         )
         
+        end_time = datetime.now(timezone.utc)
+        llm_duration = (end_time - start_time).total_seconds()
+        
         # Get the response data
         response_data = completion.choices[0].message.parsed.model_dump()
 
@@ -2142,12 +2149,13 @@ Generate a multiple-choice question that:
         random.shuffle(options)  # Shuffle all options
         correct_answer = options.index(correct_option)  # Find new index of correct answer
         
-        # Return shuffled data
+        # Return shuffled data with timing information
         return {
             'questionText': response_data['questionText'],
             'options': options,
             'correctAnswer': correct_answer,
-            'explanation': response_data['explanation']
+            'explanation': response_data['explanation'],
+            'llmDuration': llm_duration
         }
 
     except Exception as e:
@@ -2162,6 +2170,7 @@ Generate a multiple-choice question that:
                 "Option D"
             ],
             'correctAnswer': 2,
-            'explanation': "Thought we would try to help you out. Sorry for the inconvenience!"
+            'explanation': "Thought we would try to help you out. Sorry for the inconvenience!",
+            'llmDuration': 0.0
         }
 

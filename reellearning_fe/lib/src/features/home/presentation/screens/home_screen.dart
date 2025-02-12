@@ -104,6 +104,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     }
   }
 
+  // Add method to reset video list
+  void _resetRecentVideos() {
+    if (_recentVideoIds.isNotEmpty) {
+      setState(() {
+        _recentVideoIds = [];
+      });
+      debugPrint('[HomeScreen] Reset recent videos list due to feed change');
+    }
+  }
+
   // Add method to check and generate question
   Future<void> _checkAndGenerateQuestion() async {
     /**************************************************************************
@@ -146,6 +156,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       debugPrint('[Question Generation] Current video index: $currentIndex');
       debugPrint('[Question Generation] Generating question for ${_recentVideoIds.length} videos: ${_recentVideoIds.join(", ")}');
 
+      // Store video IDs before clearing them
+      final videoIdsForQuestion = List<String>.from(_recentVideoIds);
+      
+      // Clear the list before making the request to prevent duplicate questions
+      setState(() {
+        _recentVideoIds = [];
+      });
+      debugPrint('[Question Generation] Cleared watched videos list before making request');
+
       // Get Firebase auth token
       final token = await userProfile.getIdToken();
       
@@ -157,7 +176,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
           'Content-Type': 'application/json',
         },
         body: json.encode({
-          'videoIds': _recentVideoIds,
+          'videoIds': videoIdsForQuestion,
         }),
       );
 
@@ -168,22 +187,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
         // Create question model from response
         final question = QuestionModel.fromJson(questionData);
         
+        // Get the current index again to insert question 2 positions after
+        final insertIndex = ref.read(currentVideoIndexProvider) + 2;
+        debugPrint('[Question Generation] Inserting question at index: $insertIndex (current index: ${ref.read(currentVideoIndexProvider)})');
+        
         // Insert question into feed
         ref.read(paginatedVideoProvider.notifier).insertQuestion(
           question,
-          currentIndex,  // Current index when question was generated
+          insertIndex,
         );
-        
-        // Clear the list of watched videos after successful request
-        setState(() {
-          _recentVideoIds = [];
-        });
-        debugPrint('[Question Generation] Cleared watched videos list');
       } else {
         debugPrint('[Question Generation] Failed to generate question. Status: ${response.statusCode}, Body: ${response.body}');
+        // Restore the video IDs if request failed
+        setState(() {
+          _recentVideoIds = videoIdsForQuestion;
+        });
+        debugPrint('[Question Generation] Restored video IDs due to failed request');
       }
     } catch (e) {
       debugPrint('[Question Generation] Error generating question: $e');
+      // Don't restore video IDs on error to prevent infinite retry loops
     }
   }
 
@@ -199,11 +222,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     if (items.isNotEmpty && newIndex >= 0 && newIndex < items.length) {
       debugPrint('[HomeScreen] Updating index to: $newIndex (total items: ${items.length})');
       
-      // Track video ID for question generation only if it's a video item
-      final currentItem = items[newIndex];
-      if (currentItem is VideoFeedItem) {
-        _updateRecentVideos(currentItem.video.id);
-      }
+      // Remove tracking video ID here since we only want to track completed videos
+      // final currentItem = items[newIndex];
+      // if (currentItem is VideoFeedItem) {
+      //   _updateRecentVideos(currentItem.video.id);
+      // }
       
       // Only update if we're not in the middle of an index adjustment
       final notifier = ref.read(paginatedVideoProvider.notifier) as PaginatedVideoNotifier;
@@ -244,6 +267,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       print('[HomeScreen] Feed changed from $previous to $next');
       // Reset page controller when feed changes
       _pageController.jumpToPage(0);
+      // Reset recent videos list when feed changes
+      _resetRecentVideos();
     });
 
     // Listen to forced page jumps

@@ -44,8 +44,8 @@ x script to remove # from all tags
         x create a tag table, and when a new video is uploaded, if the tag doesn't exist, it creates it, otherwise it increments the count
         - eventually, we will run a nightly job to calculate the 5 nearest neighbors for all tags
         x these tags will be part of the recommendation system, basically looking at the users most liked tags and recommending videos within those and related tags
-    x add similar onboarding when you create a class
-        x maybe with a search?
+    - add similar onboarding when you create a class
+        - maybe with a search?
     - ai generated progress report(what have you done over the last x days)
         x userProgressReport collection, progress report page
             x list of historical reports
@@ -90,15 +90,17 @@ x script to remove # from all tags
     - ai generated questions randomly in the feed, based on last x videos watched (depends on subject)
         x make sure videos are only marked as watched after 80% of the video is watched
         x the condition for questions is either 2 minutes watched, but they have to have watched at least 1 video (set to 30 seconds for testing)
-        - how to make sure this runs async, so we don't have to wait for the ai to generate question while the user is watching videos
-            x fix the scroll errors, when the explanation is too long (temp fix is to make the text smaller)
-            - right now it doesn't wait for the videos to be 80% watched just immediately adds them to the possible videos list
-                - check that it also resets when switching feed
-            - it will just insert the question into the feed when it gets a response
-            - make sure it gets inserted into the feed 2 after the current video in the feed when the response comes in
-                - right now if you go fast, it will insert the question into the array at an earlier spot
+        x how to make sure this runs async, so we don't have to wait for the ai to generate question while the user is watching videos
+            - fix the scroll errors, when the explanation is too long  
+                x temp fix is to make the text smaller
+            x right now it doesn't wait for the videos to be 80% watched just immediately adds them to the possible videos list
+                x check that it also resets when switching feed
+            x it will just insert the question into the feed when it gets a response
+            x make sure it gets inserted into the feed 2 after the current video in the feed when the response comes in
+                x right now if you go fast, it will insert the question into the array at an earlier spot
         x we will pick one video from the list of watched videos, and then generate a question about that video
         x add rules to allow user to modify the question
+        - log ai completion time
         - ADD QUESTIONS ANSWERED TO REPORT (NEED to get the questions in first though)
     - ai generated badges or achievements???
         - achievements screen
