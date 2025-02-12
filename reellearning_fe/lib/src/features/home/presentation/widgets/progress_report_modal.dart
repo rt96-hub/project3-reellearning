@@ -33,11 +33,13 @@ class _ProgressReportModalState extends ConsumerState<ProgressReportModal> {
   @override
   void initState() {
     super.initState();
+    print('[ProgressReportModal] Initializing modal for sourceId: ${widget.sourceId}');
     // Check if report generation is in progress
     if (ref.read(reportGenerationInProgressProvider(widget.sourceId))) {
+      print('[ProgressReportModal] Report already in progress during init');
       // Show message and close modal
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(context).pop();
+        Navigator.of(context, rootNavigator: true).pop();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('A report is already being generated'),
@@ -76,7 +78,9 @@ class _ProgressReportModalState extends ConsumerState<ProgressReportModal> {
   }
 
   Future<void> _generateReport() async {
+    print('[ProgressReportModal] Starting report generation');
     if (startDate == null || endDate == null) {
+      print('[ProgressReportModal] Dates not selected');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select both start and end dates'),
@@ -91,6 +95,7 @@ class _ProgressReportModalState extends ConsumerState<ProgressReportModal> {
     });
 
     try {
+      print('[ProgressReportModal] Attempting API call');
       // Get the current user's ID token
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
@@ -125,11 +130,14 @@ class _ProgressReportModalState extends ConsumerState<ProgressReportModal> {
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
+        print('[ProgressReportModal] API call successful');
         // Set the in-progress state
         ref.read(reportGenerationInProgressProvider(widget.sourceId).notifier).state = true;
         
         if (mounted) {
-          Navigator.of(context).pop(); // Close the modal
+          print('[ProgressReportModal] Closing modal after successful API call');
+          // Try using rootNavigator: true to ensure we close the modal
+          Navigator.of(context, rootNavigator: true).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Report generation started'),
@@ -138,10 +146,11 @@ class _ProgressReportModalState extends ConsumerState<ProgressReportModal> {
           );
         }
       } else if (response.statusCode == 409) {
-        // Report already in progress
+        print('[ProgressReportModal] Report already in progress (409)');
         ref.read(reportGenerationInProgressProvider(widget.sourceId).notifier).state = true;
         if (mounted) {
-          Navigator.of(context).pop(); // Close the modal
+          print('[ProgressReportModal] Closing modal due to 409');
+          Navigator.of(context, rootNavigator: true).pop();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('A report is already being generated'),
@@ -150,9 +159,11 @@ class _ProgressReportModalState extends ConsumerState<ProgressReportModal> {
           );
         }
       } else {
+        print('[ProgressReportModal] API error: ${response.statusCode}');
         throw Exception(responseData['error'] ?? 'Failed to generate report');
       }
     } catch (e) {
+      print('[ProgressReportModal] Error caught: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -175,10 +186,13 @@ class _ProgressReportModalState extends ConsumerState<ProgressReportModal> {
     // Check if report generation is in progress
     final isGenerating = ref.watch(reportGenerationInProgressProvider(widget.sourceId));
     if (isGenerating) {
+      print('[ProgressReportModal] Report generation in progress, not showing modal');
       return const SizedBox.shrink(); // Don't show modal if report is being generated
     }
 
     return Dialog(
+      backgroundColor: Theme.of(context).dialogBackgroundColor,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

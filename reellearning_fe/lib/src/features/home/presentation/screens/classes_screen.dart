@@ -63,28 +63,36 @@ class _ClassesScreenState extends ConsumerState<ClassesScreen> with SingleTicker
       );
     }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        showCheckboxColumn: false,
-        columns: const [
-          DataColumn(label: Text('Title')),
-          DataColumn(label: Text('Creator')),
-          DataColumn(label: Text('Members')),
-        ],
-        rows: classes.map((classData) {
-          return DataRow(
-            cells: [
-              DataCell(
-                Text(classData.title),
-                onTap: () => context.push('/classes/${classData.id}'),
+    return ListView.builder(
+      itemCount: classes.length,
+      itemBuilder: (context, index) {
+        final classData = classes[index];
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: ListTile(
+            title: Text(
+              classData.title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
               ),
-              DataCell(_buildCreatorName(classData.creator)),
-              DataCell(Text(classData.memberCount?.toString() ?? '0')),
-            ],
-          );
-        }).toList(),
-      ),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Text('Creator: '),
+                    _buildCreatorName(classData.creator),
+                  ],
+                ),
+                Text('Members: ${classData.memberCount ?? 0}'),
+              ],
+            ),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/classes/${classData.id}'),
+          ),
+        );
+      },
     );
   }
 

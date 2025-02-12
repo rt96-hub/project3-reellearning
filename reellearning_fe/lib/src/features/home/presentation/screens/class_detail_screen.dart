@@ -92,6 +92,7 @@ class ClassDetailScreen extends ConsumerWidget {
           style: isCurrentlyMember
               ? ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
                 )
               : null,
           child: Text(isCurrentlyMember ? 'Leave Class' : 'Join Class'),
@@ -115,10 +116,11 @@ class ClassDetailScreen extends ConsumerWidget {
           // Navigate to home screen
           context.go('/');
         },
-        icon: const Icon(Icons.play_circle_outline),
+        icon: const Icon(Icons.play_circle_outline, color: Colors.white),
         label: const Text('Show Feed'),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
         ),
       ),
     );
@@ -132,10 +134,11 @@ class ClassDetailScreen extends ConsumerWidget {
           '/classes/$classId/bookmarked',
           extra: {'className': className},
         ),
-        icon: const Icon(Icons.bookmark_outline),
+        icon: const Icon(Icons.bookmark_outline, color: Colors.white),
         label: Text('$className Bookmarks'),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
         ),
       ),
     );
@@ -304,10 +307,11 @@ class ClassDetailScreen extends ConsumerWidget {
         onPressed: () => context.go(
           '/classes/$classId/progress',
         ),
-        icon: const Icon(Icons.bar_chart),
+        icon: const Icon(Icons.bar_chart, color: Colors.white),
         label: Text('$className Progress'),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.purple,
+          foregroundColor: Colors.white,
         ),
       ),
     );
