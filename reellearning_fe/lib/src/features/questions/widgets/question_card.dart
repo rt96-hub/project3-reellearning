@@ -71,9 +71,15 @@ class _QuestionCardState extends ConsumerState<QuestionCard> {
     return Container(
       color: Colors.grey[900],
       child: SafeArea(
+        top: false,  // Don't apply SafeArea padding to top
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + 48, // Space for FeedSelectionPill + its padding
+              left: 8.0,
+              right: 8.0,
+              bottom: 8.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -81,7 +87,7 @@ class _QuestionCardState extends ConsumerState<QuestionCard> {
                 Card(
                   color: Colors.grey[850],
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -90,25 +96,25 @@ class _QuestionCardState extends ConsumerState<QuestionCard> {
                             Icon(
                               Icons.quiz,
                               color: Colors.white,
-                              size: 24,
+                              size: 20,
                             ),
-                            SizedBox(width: 8),
+                            SizedBox(width: 6),
                             Text(
                               'Question',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 18,
+                                fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
                         Text(
                           widget.question.questionText,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 20,
+                            fontSize: 16,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -116,7 +122,7 @@ class _QuestionCardState extends ConsumerState<QuestionCard> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 12),
 
                 // Options
                 ...List.generate(widget.question.options.length, (index) {
@@ -125,17 +131,17 @@ class _QuestionCardState extends ConsumerState<QuestionCard> {
 
                   return Card(
                     color: _getOptionColor(index),
-                    margin: const EdgeInsets.only(bottom: 12),
+                    margin: const EdgeInsets.only(bottom: 6),
                     child: InkWell(
                       onTap: hasAnswered ? null : () => _handleAnswer(index),
                       child: Padding(
-                        padding: const EdgeInsets.all(16.0),
+                        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                         child: Row(
                           children: [
                             // Option letter (A, B, C, etc.)
                             Container(
-                              width: 32,
-                              height: 32,
+                              width: 28,
+                              height: 28,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: hasAnswered && (isSelected ?? false || isCorrect)
@@ -158,7 +164,7 @@ class _QuestionCardState extends ConsumerState<QuestionCard> {
                                 widget.question.options[index],
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 16,
+                                  fontSize: 14,
                                   fontWeight: (isSelected ?? false) ? FontWeight.bold : FontWeight.normal,
                                 ),
                               ),
@@ -177,11 +183,11 @@ class _QuestionCardState extends ConsumerState<QuestionCard> {
 
                 // Explanation
                 if (hasAnswered) ...[
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
                   Card(
                     color: Colors.grey[850],
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -190,25 +196,25 @@ class _QuestionCardState extends ConsumerState<QuestionCard> {
                               Icon(
                                 Icons.lightbulb,
                                 color: Colors.amber,
-                                size: 24,
+                                size: 20,
                               ),
-                              SizedBox(width: 8),
+                              SizedBox(width: 6),
                               Text(
                                 'Explanation',
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 18,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 8),
                           Text(
                             widget.question.explanation,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 16,
+                              fontSize: 14,
                             ),
                           ),
                         ],

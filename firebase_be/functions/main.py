@@ -16,6 +16,13 @@ import google.auth
 import google.auth.transport.requests
 import google.oauth2.id_token
 import random
+from pydantic import BaseModel, Field
+
+
+class QuestionResponse(BaseModel):
+    questionText: str = Field(..., description="The question text that tests understanding of the video content")
+    options: List[str] = Field(..., description="Four possible answer options, with the first one being correct")
+    explanation: str = Field(..., description="Detailed explanation of why the correct answer is right")
 
 def validate_environment():
     """Validate required environment variables are set."""
@@ -2022,29 +2029,34 @@ def generate_in_feed_question(req: https_fn.Request) -> https_fn.Response:
         user_ref = db.collection('users').document(user_id)
         question_ref = db.collection('questions').document()
         
-        # get the video details
-        # TODO select 1 random video from the list of video ids
+        # get the random video details
         index = random.randint(0, len(video_ids) - 1)
         video_id = video_ids[index]
-        # TODO get the video details
         video_doc = db.collection('videos').document(video_id).get()
-        video_details = video_doc.to_dict()
+        video_details = {
+            'title': video_doc.to_dict()['metadata']['title'],
+            'description': video_doc.to_dict()['metadata']['description'],
+            'transcript': video_doc.to_dict()['metadata']['transcript'],
+            'description2': video_doc.to_dict()['classification']['explicit']['description'],
+        }
 
+        # Initialize OpenAI client
+        client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
         # Generate the question from openai
-        # TODO generate the question
+        question = generate_question_from_video(client, video_details)
+
 
         # Store the question in Firestore
         # make sure only the 1 video is selected
         question_doc = {
             'userId': user_ref,
             'data': {
-                # return the video id as a document reference
                 'videoId': f'videos/{video_id}',
-                'questionText': "Based on the last videos, what is the main concept you learned?",
-                'options': ["Option A", "Option B", "Option C"],
-                'correctAnswer': 1,
-                'explanation': "Option A is correct because it relates to the core concept presented."
+                'questionText': question['questionText'],
+                'options': question['options'],
+                'correctAnswer': question['correctAnswer'],
+                'explanation': question['explanation']
             },
             'createdAt': datetime.now(timezone.utc),
             'updatedAt': datetime.now(timezone.utc)
@@ -2081,8 +2093,75 @@ def generate_in_feed_question(req: https_fn.Request) -> https_fn.Response:
             content_type='application/json'
         )
 
-def generate_question_from_videos(client: OpenAI, video_details: List[Dict]) -> Dict:
-    """Generate a multiple choice question based on video content using OpenAI."""
-    # we will use the openai api to generate the question using response format
-    # right now we are using test data
-    return None
+def generate_question_from_video(client: OpenAI, video_details: Dict) -> dict:
+    """
+    Generate a question based on the video content using OpenAI.
+    
+    Args:
+        client: OpenAI client instance
+        video_details: Dictionary containing video information (title, description, transcript, etc.)
+        
+    Returns:
+        dict: Generated question data including:
+            - questionText: str
+            - options: List[str]
+            - explanation: str
+    """
+    prompt = f"""Based on the following video content, generate an educational question that tests the viewer's understanding.
+    
+Video Title: {video_details['title']}
+Video Description: {video_details['description']}
+Video Transcript: {video_details['transcript']}
+Additional Context: {video_details['description2']}
+
+Generate a multiple-choice question that:
+1. Mention the video title in the question
+2. Tests comprehension of the main concepts
+3. Has 4 options where the FIRST option is ALWAYS the correct answer
+4. Includes a clear explanation of why the correct answer is right
+5. Ensures wrong options are plausible but clearly incorrect
+6. Uses clear, unambiguous language
+"""
+
+    try:
+        completion = client.beta.chat.completions.parse(
+            model="gpt-4o-mini-2024-07-18",
+            messages=[
+                {"role": "system", "content": "You are an expert educational content creator, skilled at generating clear, unambiguous multiple choice questions that test understanding."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format=QuestionResponse
+        )
+        
+        # Get the response data
+        response_data = completion.choices[0].message.parsed.model_dump()
+
+        # Shuffle options and update correct answer index
+        options = response_data['options']
+        correct_option = options[0]  # Save the correct answer (which was first)
+        random.shuffle(options)  # Shuffle all options
+        correct_answer = options.index(correct_option)  # Find new index of correct answer
+        
+        # Return shuffled data
+        return {
+            'questionText': response_data['questionText'],
+            'options': options,
+            'correctAnswer': correct_answer,
+            'explanation': response_data['explanation']
+        }
+
+    except Exception as e:
+        print(f"Error in OpenAI question generation: {str(e)}")
+        # Return the placeholder as fallback
+        return {
+            'questionText': "Looks like we had an error generating a question. Go ahead and pick C...",
+            'options': [
+                "Option A",
+                "Option B",
+                "Option C",
+                "Option D"
+            ],
+            'correctAnswer': 2,
+            'explanation': "Thought we would try to help you out. Sorry for the inconvenience!"
+        }
+

@@ -91,9 +91,14 @@ x script to remove # from all tags
         x make sure videos are only marked as watched after 80% of the video is watched
         x the condition for questions is either 2 minutes watched, but they have to have watched at least 1 video (set to 30 seconds for testing)
         - how to make sure this runs async, so we don't have to wait for the ai to generate question while the user is watching videos
+            x fix the scroll errors, when the explanation is too long (temp fix is to make the text smaller)
+            - right now it doesn't wait for the videos to be 80% watched just immediately adds them to the possible videos list
+                - check that it also resets when switching feed
             - it will just insert the question into the feed when it gets a response
-        - we will pick one video from the list of watched videos, and then generate a question about that video
-        - add rules to allow user to modify the question
+            - make sure it gets inserted into the feed 2 after the current video in the feed when the response comes in
+                - right now if you go fast, it will insert the question into the array at an earlier spot
+        x we will pick one video from the list of watched videos, and then generate a question about that video
+        x add rules to allow user to modify the question
         - ADD QUESTIONS ANSWERED TO REPORT (NEED to get the questions in first though)
     - ai generated badges or achievements???
         - achievements screen

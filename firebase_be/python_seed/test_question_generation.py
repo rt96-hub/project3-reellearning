@@ -7,6 +7,8 @@ import os
 from dotenv import load_dotenv
 from typing import Any, Dict, List
 import random
+from openai import OpenAI
+from pydantic import BaseModel, Field
 # Load environment variables
 load_dotenv()
 
@@ -18,22 +20,56 @@ cred = credentials.Certificate('../serviceAccountKey.json')
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
+class QuestionResponse(BaseModel):
+    questionText: str = Field(..., description="The question text that tests understanding of the video content")
+    options: List[str] = Field(..., description="Four possible answer options, with the first one being correct")
+    explanation: str = Field(..., description="Detailed explanation of why the correct answer is right")
+
 def generate_test_question(user_id: str, video_ids: List[str]):
     """Generate a test question for the given user and video context."""
     try:
+        # Initialize OpenAI client
+        openai_api_key = os.getenv('OPENAI_API_KEY')
+        if not openai_api_key:
+            print("Error: OPENAI_API_KEY not found in environment variables")
+            return
+    
+        client = OpenAI(api_key=openai_api_key)
+
         # Initialize Firestore
         user_ref = db.collection('users').document(user_id)
         question_ref = db.collection('questions').document()
-        
+                
+        # get a random video id from the list
+        index = random.randint(0, len(video_ids) - 1)
+        video_id = video_ids[index]
+
+        # get the video details
+        video_doc = db.collection('videos').document(video_id).get()
+        video_details = {
+            'title': video_doc.to_dict()['metadata']['title'],
+            'description': video_doc.to_dict()['metadata']['description'],
+            'transcript': video_doc.to_dict()['metadata']['transcript'],
+            'description2': video_doc.to_dict()['classification']['explicit']['description'],
+        }
+
+        # video details will be used to generate the question later
+        print(f"Video details: {json.dumps(video_details, indent=2)}")
+
+        # generate the question
+        question = generate_question_from_video(client, video_details)
+        print(f"Question: {json.dumps(question, indent=2)}")
+
+
         # Create test question document
         question_doc = {
             'userId': user_ref,
             'data': {
-                'videoId': [db.collection('videos').document(vid) for vid in video_ids],
-                'questionText': "Based on the last videos, what is the main concept you learned?",
-                'options': ["Option A", "Option B", "Option C"],
-                'correctAnswer': 1,
-                'explanation': "Option A is correct because it relates to the core concept presented."
+                'videoId': f'videos/{video_id}',
+                'questionText': question['questionText'],
+                'options': question['options'],
+                'correctAnswer': question['correctAnswer'],
+                'explanation': question['explanation']
             },
             'createdAt': datetime.now(timezone.utc),
             'updatedAt': datetime.now(timezone.utc)
@@ -41,16 +77,6 @@ def generate_test_question(user_id: str, video_ids: List[str]):
         
         # Store the question in Firestore
         question_ref.set(question_doc)
-        
-        # get a random video id from the list
-        index = random.randint(0, len(video_ids) - 1)
-        video_id = video_ids[index]
-
-        # get the video details
-        video_doc = db.collection('videos').document(video_id).get()
-        video_details = video_doc.to_dict()
-
-        # video details will be used to generate the question later
 
         # Create a JSON-serializable version of the data
         json_safe_data = {
@@ -120,6 +146,79 @@ def get_recent_videos(user_id: str, minutes: int = 2) -> List[str]:
     except Exception as e:
         print(f"Error getting recent videos: {str(e)}")
         return []
+
+def generate_question_from_video(client: OpenAI, video_details: Dict) -> dict:
+    """
+    Generate a question based on the video content using OpenAI.
+    
+    Args:
+        client: OpenAI client instance
+        video_details: Dictionary containing video information (title, description, transcript, etc.)
+        
+    Returns:
+        dict: Generated question data including:
+            - questionText: str
+            - options: List[str]
+            - explanation: str
+    """
+    prompt = f"""Based on the following video content, generate an educational question that tests the viewer's understanding.
+    
+Video Title: {video_details['title']}
+Video Description: {video_details['description']}
+Video Transcript: {video_details['transcript']}
+Additional Context: {video_details['description2']}
+
+Generate a multiple-choice question that:
+1. Tests comprehension of the main concepts
+2. Has 4 options where the FIRST option is ALWAYS the correct answer
+3. Includes a clear explanation of why the correct answer is right
+4. Ensures wrong options are plausible but clearly incorrect
+5. Uses clear, unambiguous language
+6. Mention the video title in the question
+"""
+
+    try:
+        completion = client.beta.chat.completions.parse(
+            model="gpt-4o-mini-2024-07-18",
+            messages=[
+                {"role": "system", "content": "You are an expert educational content creator, skilled at generating clear, unambiguous multiple choice questions that test understanding."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format=QuestionResponse
+        )
+        
+        # Get the response data
+        response_data = completion.choices[0].message.parsed.model_dump()
+        
+        print(f"Response data: {json.dumps(response_data, indent=2)}")
+        # Shuffle options and update correct answer index
+        options = response_data['options']
+        correct_option = options[0]  # Save the correct answer (which was first)
+        random.shuffle(options)  # Shuffle all options
+        correct_answer = options.index(correct_option)  # Find new index of correct answer
+        
+        # Return shuffled data
+        return {
+            'questionText': response_data['questionText'],
+            'options': options,
+            'correctAnswer': correct_answer,
+            'explanation': response_data['explanation']
+        }
+
+    except Exception as e:
+        print(f"Error in OpenAI question generation: {str(e)}")
+        # Return the placeholder as fallback
+        return {
+            'questionText': "What is the main topic discussed in this video?",
+            'options': [
+                "Placeholder option A",
+                "Placeholder option B",
+                "Placeholder option C",
+                "Placeholder option D"
+            ],
+            'correctAnswer': 0,
+            'explanation': "This is a placeholder explanation for the correct answer."
+        }
 
 def main():
     print("\nTesting In-Feed Question Generation:")
