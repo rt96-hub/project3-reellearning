@@ -38,6 +38,9 @@ final routerProvider = Provider<GoRouter>((ref) {
     observers: [AppRouteObservers.rootObserver],
     initialLocation: '/login',
     redirect: (context, state) {
+      // If onboarding state is still loading, do not redirect
+      if (onboardingCompleted is AsyncLoading) return null;
+
       final isLoggedIn = authState.value != null;
       final isGoingToAuth = state.matchedLocation == '/login' || 
                            state.matchedLocation == '/signup';
@@ -45,7 +48,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Handle loading and error states
       final isOnboardingCompleted = onboardingCompleted.when(
         data: (value) => value,
-        loading: () => false,
+        loading: () => false, // This branch won't be hit now that we check loading above
         error: (_, __) => false,
       );
       
@@ -56,7 +59,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/login';
       }
 
-      // Logged in but trying to access auth pages - redirect to home
+      // Logged in but trying to access auth pages - redirect accordingly
       if (isLoggedIn && isGoingToAuth) {
         if (!isOnboardingCompleted) {
           return '/onboarding/profile';

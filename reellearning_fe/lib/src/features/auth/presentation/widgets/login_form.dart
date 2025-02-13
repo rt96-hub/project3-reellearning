@@ -35,26 +35,6 @@ class _LoginFormState extends State<LoginForm> {
           _emailController.text.trim(),
           _passwordController.text,
         );
-        
-        if (!mounted) return;
-
-        // Check onboarding status before navigating
-        final userId = _authService.currentUser?.uid;
-        if (userId != null) {
-          final userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(userId)
-              .get();
-          
-          if (mounted) {
-            final onboardingCompleted = userDoc.data()?['onboardingCompleted'] as bool? ?? false;
-            if (onboardingCompleted) {
-              context.go('/');
-            } else {
-              context.go('/onboarding/profile');
-            }
-          }
-        }
       } catch (e) {
         _showErrorMessage(e.toString());
       } finally {
