@@ -34,6 +34,7 @@ class FilteredVideoFeedScreen extends ConsumerStatefulWidget {
 class _FilteredVideoFeedScreenState extends ConsumerState<FilteredVideoFeedScreen> with RouteAware {
   late final PageController _pageController;
   bool _isMuted = false;
+  bool _showFullDescription = false;
 
   @override
   void initState() {
@@ -152,7 +153,7 @@ class _FilteredVideoFeedScreenState extends ConsumerState<FilteredVideoFeedScree
           if (widget.videos.isNotEmpty)
             Positioned(
               left: 16,
-              right: 48, // Leave space for action buttons
+              right: 88,  // Match home screen's spacing
               bottom: 120,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,14 +232,17 @@ class _FilteredVideoFeedScreenState extends ConsumerState<FilteredVideoFeedScree
                               },
                             ),
                             const SizedBox(height: 4),
-                            Text(
-                              currentVideo.description,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
+                            GestureDetector(
+                              onTap: () => setState(() => _showFullDescription = !_showFullDescription),
+                              child: Text(
+                                currentVideo.description,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                                maxLines: _showFullDescription ? null : 2,
+                                overflow: _showFullDescription ? null : TextOverflow.ellipsis,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -253,9 +257,12 @@ class _FilteredVideoFeedScreenState extends ConsumerState<FilteredVideoFeedScree
           if (widget.videos.isNotEmpty)
             Positioned(
               right: 8,
-              bottom: MediaQuery.of(context).size.height * 0.3,
-              child: VideoActionButtons(
-                videoId: currentVideo.id,
+              bottom: 80,
+              child: SizedBox(
+                width: 72,
+                child: VideoActionButtons(
+                  videoId: currentVideo.id,
+                ),
               ),
             ),
 
