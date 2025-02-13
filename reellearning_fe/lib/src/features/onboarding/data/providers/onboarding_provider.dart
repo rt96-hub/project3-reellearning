@@ -13,5 +13,6 @@ final onboardingCompletedProvider = StreamProvider<bool>((ref) {
       .collection('users')
       .doc(user.uid)
       .snapshots()
+      .where((doc) => doc.exists)
       .map((doc) => doc.data()?['onboardingCompleted'] as bool? ?? false);
 });
