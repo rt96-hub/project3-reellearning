@@ -124,7 +124,7 @@ x script to remove # from all tags
     x remove the message and search buttons on the bottom bar
 
 - high priority:
-    - profile page flashing
+    x profile page flashing
     - report generation, time stamp is going until 6pm instead of 12am so results in the evening are not correct
     - semantic search on class name to skew results for hashtags
         - search bar in general on interest page

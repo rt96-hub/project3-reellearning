@@ -107,9 +107,26 @@ class _ProgressReportModalState extends ConsumerState<ProgressReportModal> {
           ? 'generate_user_report' 
           : 'generate_class_report';
 
-      // Create DateTime objects for start of start date and end of end date
-      final startDateTime = DateTime(startDate!.year, startDate!.month, startDate!.day);
-      final endDateTime = DateTime(endDate!.year, endDate!.month, endDate!.day, 23, 59, 59);
+      // Create DateTime objects for start of start date and end of end date in local time
+      // Then convert to UTC for the backend
+      final startDateTime = DateTime(
+        startDate!.year, 
+        startDate!.month, 
+        startDate!.day, 
+        0, 0, 0,
+        0  // milliseconds
+      ).toUtc();
+      
+      final endDateTime = DateTime(
+        endDate!.year, 
+        endDate!.month, 
+        endDate!.day, 
+        23, 59, 59,
+        999  // milliseconds
+      ).toUtc();
+
+      print('[ProgressReportModal] Start time (UTC): ${startDateTime.toIso8601String()}');
+      print('[ProgressReportModal] End time (UTC): ${endDateTime.toIso8601String()}');
 
       final url = Uri.parse('$_functionBaseUrl/$functionName');
       

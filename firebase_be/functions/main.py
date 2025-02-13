@@ -963,6 +963,26 @@ def generate_user_report(req: https_fn.Request) -> https_fn.Response:
                 content_type='application/json'
             )
 
+        # Parse timestamps with timezone awareness
+        try:
+            from datetime import timezone
+            start_date = datetime.fromisoformat(start_time)
+            end_date = datetime.fromisoformat(end_time)
+            
+            # If timestamps don't have timezone info, assume they're in local time
+            # and convert to UTC for Firestore queries
+            if start_date.tzinfo is None:
+                start_date = start_date.replace(tzinfo=timezone.utc)
+            if end_date.tzinfo is None:
+                end_date = end_date.replace(tzinfo=timezone.utc)
+        except ValueError as e:
+            return https_fn.Response(
+                json.dumps({'error': f'Invalid date format: {str(e)}'}),
+                status=400,
+                headers=cors_headers,
+                content_type='application/json'
+            )
+
         # Validate report type
         valid_types = ['daily', 'weekly', 'monthly', 'yearly', 'custom']
         if report_type not in valid_types:
@@ -1357,6 +1377,26 @@ def generate_class_report(req: https_fn.Request) -> https_fn.Response:
         if not all([class_id, start_time, end_time]):
             return https_fn.Response(
                 json.dumps({'error': 'Missing required parameters'}),
+                status=400,
+                headers=cors_headers,
+                content_type='application/json'
+            )
+
+        # Parse timestamps with timezone awareness
+        try:
+            from datetime import timezone
+            start_date = datetime.fromisoformat(start_time)
+            end_date = datetime.fromisoformat(end_time)
+            
+            # If timestamps don't have timezone info, assume they're in local time
+            # and convert to UTC for Firestore queries
+            if start_date.tzinfo is None:
+                start_date = start_date.replace(tzinfo=timezone.utc)
+            if end_date.tzinfo is None:
+                end_date = end_date.replace(tzinfo=timezone.utc)
+        except ValueError as e:
+            return https_fn.Response(
+                json.dumps({'error': f'Invalid date format: {str(e)}'}),
                 status=400,
                 headers=cors_headers,
                 content_type='application/json'

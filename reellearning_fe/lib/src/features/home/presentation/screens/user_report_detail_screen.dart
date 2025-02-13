@@ -11,7 +11,10 @@ class UserReportDetailScreen extends StatelessWidget {
   });
 
   String _formatDate(Timestamp timestamp) {
-    return DateFormat.yMMMd().add_jm().format(timestamp.toDate());
+    // Convert UTC DateTime to local time before formatting
+    final utcDateTime = timestamp.toDate();
+    final localDateTime = utcDateTime.toLocal();
+    return DateFormat.yMMMd().add_jm().format(localDateTime);
   }
 
   @override
