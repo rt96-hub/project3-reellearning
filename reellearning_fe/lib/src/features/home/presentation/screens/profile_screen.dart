@@ -182,17 +182,6 @@ class _UserProfileContent extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         ElevatedButton.icon(
-          onPressed: () {
-            context.go('/profile/settings');
-          },
-          icon: const Icon(Icons.settings),
-          label: const Text('Settings'),
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(200, 45),
-          ),
-        ),
-        const SizedBox(height: 12),
-        ElevatedButton.icon(
           onPressed: () => _handleLogout(context, ref),
           icon: const Icon(Icons.logout),
           label: const Text('Logout'),
@@ -209,16 +198,6 @@ class _UserProfileContent extends ConsumerWidget {
   Widget _buildOtherProfileActions(BuildContext context) {
     return Column(
       children: [
-        ElevatedButton.icon(
-          onPressed: () {
-            // TODO: Implement friend action
-          },
-          icon: const Icon(Icons.person_add),
-          label: const Text('Add Friend'),
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(200, 45),
-          ),
-        ),
         const SizedBox(height: 20),
         StreamBuilder<DocumentSnapshot>(
           stream: FirebaseFirestore.instance
@@ -266,18 +245,18 @@ class _UserProfileContent extends ConsumerWidget {
           },
         ),
         const SizedBox(height: 20),
-        ElevatedButton.icon(
-          onPressed: () {
-            // TODO: Implement block action
-          },
-          icon: const Icon(Icons.block),
-          label: const Text('Block'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            minimumSize: const Size(200, 45),
-          ),
-        ),
+        // ElevatedButton.icon(
+        //   onPressed: () {
+        //     // TODO: Implement block action
+        //   },
+        //   icon: const Icon(Icons.block),
+        //   label: const Text('Block'),
+        //   style: ElevatedButton.styleFrom(
+        //     backgroundColor: Colors.red,
+        //     foregroundColor: Colors.white,
+        //     minimumSize: const Size(200, 45),
+        //   ),
+        // ),
       ],
     );
   }
