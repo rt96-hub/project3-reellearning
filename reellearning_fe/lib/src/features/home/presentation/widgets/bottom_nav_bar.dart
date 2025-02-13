@@ -38,14 +38,14 @@ class BottomNavBar extends StatelessWidget {
             icon: Icon(Icons.school),
             label: 'Classes',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.message),
-            label: 'Messages',
-          ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.search),
+          //   label: 'Search',
+          // ),
+          // BottomNavigationBarItem(
+          //   icon: Icon(Icons.message),
+          //   label: 'Messages',
+          // ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',

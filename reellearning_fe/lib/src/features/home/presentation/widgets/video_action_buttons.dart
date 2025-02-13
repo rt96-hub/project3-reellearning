@@ -170,12 +170,12 @@ class _VideoActionButtonsState extends ConsumerState<VideoActionButtons> {
           onPressed: _showCommentsModal,
         ),
         const SizedBox(height: 8),
-        _buildActionButton(
-          icon: Icons.share,
-          onPressed: () {
-            // Handle share action
-          },
-        ),
+        // _buildActionButton(
+        //   icon: Icons.share,
+        //   onPressed: () {
+        //     // Handle share action
+        //   },
+        // ),
       ],
     );
   }

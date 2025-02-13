@@ -43,14 +43,14 @@ class ShellScaffold extends ConsumerWidget {
               context.go('/classes');
               break;
             case 2:
-              context.go('/search');
-              break;
-            case 3:
-              context.go('/messages');
-              break;
-            case 4:
               context.go('/profile');
               break;
+            // case 3:
+            //   context.go('/messages');
+            //   break;
+            // case 4:
+            //   context.go('/profile');
+            //   break;
           }
         },
       ),

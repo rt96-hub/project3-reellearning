@@ -112,9 +112,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           final location = state.uri.path;
           int selectedIndex = 0;
           if (location.startsWith('/classes')) selectedIndex = 1;
-          if (location.startsWith('/search')) selectedIndex = 2;
-          if (location.startsWith('/messages')) selectedIndex = 3;
-          if (location.startsWith('/profile')) selectedIndex = 4;
+          if (location.startsWith('/profile')) selectedIndex = 2;
           
           return ShellScaffold(
             selectedIndex: selectedIndex,
