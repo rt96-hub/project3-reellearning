@@ -17,6 +17,7 @@ import google.auth.transport.requests
 import google.oauth2.id_token
 import random
 from pydantic import BaseModel, Field
+from pinecone import Pinecone
 
 
 class QuestionResponse(BaseModel):
@@ -2213,4 +2214,185 @@ Generate a multiple-choice question that:
             'explanation': "Thought we would try to help you out. Sorry for the inconvenience!",
             'llmDuration': 0.0
         }
+
+@https_fn.on_request()
+def retrieve_suggested_class_tags(req: https_fn.Request) -> https_fn.Response:
+    """Get tag suggestions for a class based on its name and description."""
+    # Set CORS headers for all responses
+    cors_headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '3600',
+    }
+    
+    # Handle OPTIONS request (preflight)
+    if req.method == 'OPTIONS':
+        return https_fn.Response('', headers=cors_headers, status=204)
+    
+    # Verify authentication
+    auth_header = req.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return https_fn.Response(
+            json.dumps({'error': 'Unauthorized - Invalid token format'}),
+            status=401,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+    
+    # Authentication block
+    try:
+        # Verify the token
+        token = auth_header.split('Bearer ')[1]
+        decoded_token = auth.verify_id_token(token)
+        user_id = decoded_token['uid']
+    except Exception as auth_error:
+        error_message = f'Authentication error: {str(auth_error)}'
+        print(f"Auth Error for request: {error_message}")  # Log the error
+        return https_fn.Response(
+            json.dumps({'error': error_message}),
+            status=401,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+        
+    # Request parsing block
+    try:
+        request_data = json.loads(req.data.decode())
+        class_name = request_data.get('className')
+        class_description = request_data.get('description', '')  # Default to empty string
+        
+        if not class_name:
+            return https_fn.Response(
+                json.dumps({
+                    'error': 'Missing required fields',
+                    'details': {
+                        'className': 'missing' if not class_name else 'present',
+                    }
+                }),
+                status=400,
+                headers=cors_headers,
+                content_type='application/json'
+            )
+    except json.JSONDecodeError as json_error:
+        error_message = f'Invalid JSON in request body: {str(json_error)}'
+        print(f"JSON Parse Error: {error_message}")  # Log the error
+        return https_fn.Response(
+            json.dumps({'error': error_message}),
+            status=400,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+    except Exception as parse_error:
+        error_message = f'Error parsing request data: {str(parse_error)}'
+        print(f"Request Parse Error: {error_message}")  # Log the error
+        return https_fn.Response(
+            json.dumps({'error': error_message}),
+            status=400,
+            headers=cors_headers,
+            content_type='application/json'
+        )
+
+    # Main logic block
+    try:
+        # Initialize Pinecone
+        try:
+            pc = Pinecone(api_key=os.getenv('PINECONE_API_KEY'))
+            index = pc.Index(os.getenv('PINECONE_INDEX'))
+        except Exception as pinecone_error:
+            error_message = f'Pinecone initialization error: {str(pinecone_error)}'
+            print(f"Pinecone Error: {error_message}")  # Log the error
+            return https_fn.Response(
+                json.dumps({'error': error_message}),
+                status=500,
+                headers=cors_headers,
+                content_type='application/json'
+            )
+        
+        # OpenAI embedding generation
+        try:
+            client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+            # Only include description in combined text if it's not empty
+            combined_text = class_name if not class_description else f"{class_name}. {class_description}"
+            embedding_response = client.embeddings.create(
+                model="text-embedding-3-small",
+                input=combined_text,
+                encoding_format="float"
+            )
+            embedding = embedding_response.data[0].embedding
+        except Exception as openai_error:
+            error_message = f'OpenAI embedding generation error: {str(openai_error)}'
+            print(f"OpenAI Error: {error_message}")  # Log the error
+            return https_fn.Response(
+                json.dumps({'error': error_message}),
+                status=500,
+                headers=cors_headers,
+                content_type='application/json'
+            )
+
+        # Pinecone query
+        try:
+            query_response = index.query(
+                vector=embedding,
+                top_k=20,
+                include_metadata=True
+            )
+        except Exception as query_error:
+            error_message = f'Pinecone query error: {str(query_error)}'
+            print(f"Pinecone Query Error: {error_message}")  # Log the error
+            return https_fn.Response(
+                json.dumps({'error': error_message}),
+                status=500,
+                headers=cors_headers,
+                content_type='application/json'
+            )
+
+        # Extract tag IDs and get details from videoTags collection
+        tag_ids = [match.id for match in query_response.matches]
+        tag_details = []
+        
+        # Firestore operations
+        try:
+            db = firestore.client()
+            for tag_id in tag_ids:
+                tag_doc = db.collection('videoTags').document(tag_id).get()
+                if tag_doc.exists:
+                    tag_data = tag_doc.to_dict()
+                    tag_details.append({
+                        'id': tag_id,
+                        'tag': tag_data.get('tag', f'#{tag_id}'),
+                        'relatedTags': tag_data.get('relatedTags', []),
+                        'score': next((match.score for match in query_response.matches if match.id == tag_id), None)
+                    })
+        except Exception as firestore_error:
+            error_message = f'Firestore operation error: {str(firestore_error)}'
+            print(f"Firestore Error: {error_message}")  # Log the error
+            return https_fn.Response(
+                json.dumps({'error': error_message}),
+                status=500,
+                headers=cors_headers,
+                content_type='application/json'
+            )
+
+        # Sort by score
+        tag_details.sort(key=lambda x: x['score'] if x['score'] is not None else -1, reverse=True)
+
+        return https_fn.Response(
+            json.dumps({
+                'status': 'success',
+                'tags': tag_details
+            }),
+            headers=cors_headers,
+            content_type='application/json'
+        )
+
+    except Exception as e:
+        error_message = f'Unexpected error in main logic: {str(e)}'
+        print(f"Unexpected Error: {error_message}")  # Log the error
+        return https_fn.Response(
+            json.dumps({'error': error_message}),
+            status=500,
+            headers=cors_headers,
+            content_type='application/json'
+        )
 

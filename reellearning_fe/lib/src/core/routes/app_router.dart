@@ -76,6 +76,11 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Onboarding completed but trying to access onboarding pages - redirect to home
       if (isLoggedIn && isOnboardingCompleted && isGoingToOnboarding) {
+        // Allow access to interests screen if it's for class creation
+        if (state.matchedLocation == '/onboarding/interests' && 
+            (state.extra as Map<String, dynamic>?)?['isClassCreation'] == true) {
+          return null;
+        }
         return '/';
       }
 
@@ -101,7 +106,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: 'interests',
-            builder: (context, state) => const InterestsScreen(),
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>?;
+              return InterestsScreen(
+                className: extra?['className'] as String?,
+                classDescription: extra?['classDescription'] as String?,
+                isClassCreation: extra?['isClassCreation'] as bool? ?? false,
+              );
+            },
           ),
         ],
       ),

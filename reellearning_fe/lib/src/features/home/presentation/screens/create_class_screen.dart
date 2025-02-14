@@ -153,9 +153,10 @@ class _CreateClassScreenState extends ConsumerState<CreateClassScreen> {
   Future<void> _proceedToTagSelection() async {
     if (!_formKey.currentState!.validate()) return;
 
-    await _fetchTags();
-    setState(() {
-      _showTagSelection = true;
+    context.push('/onboarding/interests', extra: {
+      'className': _titleController.text,
+      'classDescription': _descriptionController.text,
+      'isClassCreation': true,
     });
   }
 

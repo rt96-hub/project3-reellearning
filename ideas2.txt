@@ -125,9 +125,10 @@ x script to remove # from all tags
 
 - high priority:
     x profile page flashing
-    - report generation, time stamp is going until 6pm instead of 12am so results in the evening are not correct
+    x report generation, time stamp is going until 6pm instead of 12am so results in the evening are not correct
     - semantic search on class name to skew results for hashtags
-        - search bar in general on interest page
+        - embed and grab the closest 20 hashtags to the class name, put those at the top of the tag selection list
+        - search bar in general on interest page, or maybe not
         - coming from the feed
     - add questions to the report
     - format the text report better (md plugin? render special in flutter?)
